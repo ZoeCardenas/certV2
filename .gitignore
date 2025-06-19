@@ -1,0 +1,17 @@
+# Node.js
+node_modules/
+.env
+.env.local
+config.json
+*.log
+
+# Logs
+logs/
+*.log
+
+# Build
+dist/
+build/
+
+# Docker
+docker-compose.override.yml
