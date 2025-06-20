@@ -1,23 +1,40 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../db/PostgretSQL');
-const bcrypt = require('bcrypt');
+const db = require('../db/PostgreSQL');
 
-const Usuario = sequelize.define('Usuario', {
+const Usuario = db.define('Usuario', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  nombre: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   email: {
     type: DataTypes.STRING,
-    unique: true,
-    allowNull: false
+    allowNull: false,
+    unique: true
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  telegram_chat_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  correo_alerta: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  activo: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
-  hooks: {
-    beforeCreate: async (usuario) => {
-      usuario.password = await bcrypt.hash(usuario.password, 10);
-    }
-  }
+  tableName: 'usuarios',
+  timestamps: true
 });
 
 module.exports = Usuario;

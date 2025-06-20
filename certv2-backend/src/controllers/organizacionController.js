@@ -1,4 +1,4 @@
-const Organizacion = require('../models/Organizacion');
+const Organizacion = require('../models/Monitoreo');
 
 exports.crearOrganizacion = async (req, res) => {
   const { nombre, dominios, palabrasClave, telegramChatId } = req.body;

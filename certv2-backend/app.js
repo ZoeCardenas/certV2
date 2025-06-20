@@ -1,11 +1,33 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('./config/dotenv');
-const routes = require('./routes');
+const helmet = require('helmet');
+require('dotenv').config();
+
+const { connectDB } = require('./src/db/PostgreSQL');
+
+const authRoutes = require('./routes/authRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const monitoreoRoutes = require('./routes/monitoreoRoutes');
+const detalleRoutes = require('./routes/detalleRoutes');
+const alertaRoutes = require('./routes/alertaRoutes');
+const emailRoutes = require('./routes/emailRoutes'); // solo si implementas pruebas
 
 const app = express();
+
+// Middlewares globales
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
-app.use('/api', routes);
+
+// Conexión a PostgreSQL
+connectDB();
+
+// Rutas API
+app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/monitoreos', monitoreoRoutes);
+app.use('/api', detalleRoutes);      // incluye: /monitoreos/:id/detalles y /detalles/:id
+app.use('/api', alertaRoutes);       // incluye: /alertas y /alertas/:id
+app.use('/api/email', emailRoutes);  // test de correo (opcional)
 
 module.exports = app;
