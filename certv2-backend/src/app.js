@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const authRoutes = require('./src/routes/authRoutes');
 const organizacionRoutes = require('./src/routes/organizacionRoutes');
-const { connectDB } = require('./src/db/postgres');
+const { connectDB } = require('./src/db/PostgretSQL');
 
 const app = express();
 app.use(cors());

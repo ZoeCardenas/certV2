@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../db/postgres');
+const { sequelize } = require('../db/PostgretSQL');
 const bcrypt = require('bcrypt');
 
 const Usuario = sequelize.define('Usuario', {

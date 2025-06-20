@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../db/postgres');
+const { sequelize } = require('../db/PostgretSQL');
 
 const Organizacion = sequelize.define('Organizacion', {
   nombre: {
