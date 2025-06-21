@@ -1,4 +1,4 @@
-const Alerta = require('../models/Alertas');
+const Alerta = require('../models/Alerta');
 const Monitoreo = require('../models/Monitoreo');
 
 // GET /api/alertas/

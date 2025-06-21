@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../db/PostgreSQL');
+const { sequelize } = require('../db/PostgreSQL');
 
-const Usuario = db.define('Usuario', {
+const Usuario = sequelize.define('Usuario', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -19,6 +19,10 @@ const Usuario = db.define('Usuario', {
   password: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  telegram_token: {                    // << AÑADIDO
+    type: DataTypes.STRING,
+    allowNull: true
   },
   telegram_chat_id: {
     type: DataTypes.STRING,

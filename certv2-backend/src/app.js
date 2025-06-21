@@ -3,14 +3,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
-const { connectDB } = require('./src/db/PostgreSQL');
 
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const monitoreoRoutes = require('./routes/monitoreoRoutes');
 const detalleRoutes = require('./routes/detalleRoutes');
 const alertaRoutes = require('./routes/alertaRoutes');
-const emailRoutes = require('./routes/emailRoutes'); // solo si implementas pruebas
+const emailRoutes = require('./routes/emailRoutes');
+const { connectDB } = require('./db/PostgreSQL');
 
 const app = express();
 

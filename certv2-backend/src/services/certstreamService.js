@@ -1,72 +1,98 @@
 const WebSocket = require('ws');
+const fs = require('fs');
+const { sendTelegramAlert } = require('./telegramService');
 const Monitoreo = require('../models/Monitoreo');
 const MonitoreoDetalle = require('../models/MonitoreoDetalle');
-const Alerta = require('../models/Alertas');
 const Usuario = require('../models/Usuario');
-const { enviarAlertaTelegram } = require('./telegramService');
-const { enviarAlertaEmail } = require('./emailService');
 
-function iniciarCertStream() {
-  const ws = new WebSocket('wss://certstream.calidog.io/');
+const { Op } = require('sequelize');
 
-  ws.on('message', async (data) => {
+const CERTSTREAM_URL = 'wss://certstream.calidog.io/';
+const LOG_FILE = 'alerts.log';
+
+let monitoreosActivos = [];
+
+async function cargarMonitoreos() {
+  const datos = await Monitoreo.findAll({
+    where: { activo: true },
+    include: [
+      { model: MonitoreoDetalle },
+      { model: Usuario, attributes: ['email', 'telegram_token', 'telegram_chat_id'] }
+    ]
+  });
+
+  monitoreosActivos = [];
+
+  datos.forEach(m => {
+    m.MonitoreoDetalles.forEach(d => {
+      monitoreosActivos.push({
+        dominio: d.dominio.toLowerCase(),
+        palabra_clave: d.palabra_clave.toLowerCase(),
+        organizacion: m.organizacion,
+        usuario_id: m.usuario_id,
+        telegram: {
+          token: m.Usuario.telegram_token,
+          chatId: m.Usuario.telegram_chat_id
+        }
+      });
+    });
+  });
+
+  console.log(`✅ Monitoreos cargados: ${monitoreosActivos.length}`);
+}
+
+function logAlert(domain, organization) {
+  const timestamp = new Date().toISOString();
+  const log = `[${timestamp}] ORG: ${organization} | DOM: ${domain}\n`;
+  fs.appendFileSync(LOG_FILE, log);
+}
+
+function startCertStreamWatcher() {
+  const ws = new WebSocket(CERTSTREAM_URL);
+
+  ws.on('open', async () => {
+    console.log("🔌 Conectado a CertStream.");
+    await cargarMonitoreos();
+
+    // Refrescar cada 5 minutos los monitoreos activos
+    setInterval(cargarMonitoreos, 5 * 60 * 1000);
+  });
+
+  ws.on('message', (data) => {
     try {
-      const payload = JSON.parse(data);
-      if (payload.message_type !== 'certificate_update') return;
+      const message = JSON.parse(data);
+      if (message.message_type !== 'certificate_update') return;
 
-      const dominiosCert = payload.data.leaf_cert.all_domains;
+      const allDomains = message.data.leaf_cert.all_domains || [];
 
-      const monitoreos = await Monitoreo.findAll({
-        where: { activo: true },
-        include: [
-          { model: MonitoreoDetalle, required: true },
-          { model: Usuario, required: true }
-        ]
+      allDomains.forEach(domain => {
+        const domainLower = domain.toLowerCase();
+
+        monitoreosActivos.forEach(config => {
+          const matchDominio = domainLower.includes(config.dominio);
+          const matchKeyword = domainLower.includes(config.palabra_clave);
+
+          if (matchDominio || matchKeyword) {
+            const alertMsg = `🚨 Coincidencia detectada\n🔹 Dominio: ${domain}\n🏢 Organización: ${config.organizacion}`;
+
+            console.log(alertMsg);
+            sendTelegramAlert(config.telegram.token, config.telegram.chatId, alertMsg);
+            logAlert(domain, config.organizacion);
+          }
+        });
       });
 
-      for (const monitoreo of monitoreos) {
-        for (const detalle of monitoreo.MonitoreoDetalles) {
-          for (const dominioDetectado of dominiosCert) {
-            const dominioMatch = dominioDetectado.includes(detalle.dominio);
-            const palabraMatch = dominioDetectado.includes(detalle.palabra_clave);
-
-            if (dominioMatch || palabraMatch) {
-              await Alerta.create({
-                dominio_detectado: dominioDetectado,
-                palabra_clave_detectada: detalle.palabra_clave,
-                enviado_por: 'telegram',
-                monitoreo_id: monitoreo.id,
-                usuario_id: monitoreo.Usuario.id
-              });
-
-              const mensaje = `🚨 *Alerta detectada*\n\n*Organización:* ${monitoreo.organizacion}\n*Dominio:* \`${dominioDetectado}\`\n*Palabra clave:* \`${detalle.palabra_clave}\``;
-
-              if (monitoreo.Usuario.telegram_chat_id) {
-                await enviarAlertaTelegram(mensaje, monitoreo.Usuario.telegram_chat_id);
-              }
-
-              if (monitoreo.Usuario.correo_alerta) {
-                await enviarAlertaEmail(
-                  monitoreo.Usuario.correo_alerta,
-                  '🔔 Alerta de dominio detectado',
-                  `Organización: ${monitoreo.organizacion}\nDominio: ${dominioDetectado}\nPalabra clave: ${detalle.palabra_clave}`
-                );
-              }
-
-              console.log(`🔔 Alerta generada para ${monitoreo.organizacion}: ${dominioDetectado}`);
-            }
-          }
-        }
-      }
-
     } catch (err) {
-      console.error('[CertStream ERROR]', err.message);
+      console.error("❌ Error procesando mensaje:", err.message);
     }
   });
 
-  ws.on('error', err => {
-    console.error('[CertStream WebSocket Error]', err.message);
+  ws.on('error', (err) => {
+    console.error("❌ Error en CertStream:", err.message);
   });
 }
 
-module.exports = { iniciarCertStream };
+module.exports = {
+  startCertStreamWatcher,
+  cargarMonitoreos // ✅ AÑADE ESTA LÍNEA
+};

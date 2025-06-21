@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../auth/authMiddleware');
+const authMiddleware = require('../auth/authMiddleware'); // ✅ sin destructurar
 const { getAlertas, getAlerta } = require('../controllers/alertaController');
 
-router.use(auth);
+router.use(authMiddleware); // ✅ usa el nombre correcto
 
 router.get('/alertas', getAlertas);
 router.get('/alertas/:id', getAlerta);

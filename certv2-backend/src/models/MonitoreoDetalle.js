@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
-const db = require('../db/PostgreSQL');
+const { sequelize } = require('../db/PostgreSQL');
 const Monitoreo = require('./Monitoreo');
 
-const MonitoreoDetalle = db.define('MonitoreoDetalle', {
+const MonitoreoDetalle = sequelize.define('MonitoreoDetalle', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
