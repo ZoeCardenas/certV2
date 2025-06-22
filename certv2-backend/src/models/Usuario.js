@@ -20,7 +20,12 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.STRING,
     allowNull: false
   },
-  telegram_token: {                    // << AÑADIDO
+  rol: {  // ← NUEVO
+    type: DataTypes.ENUM('admin', 'analista'),
+    allowNull: false,
+    defaultValue: 'analista'
+  },
+  telegram_token: {
     type: DataTypes.STRING,
     allowNull: true
   },

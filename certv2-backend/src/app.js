@@ -5,7 +5,6 @@ require('dotenv').config();
 
 
 const authRoutes = require('./routes/authRoutes');
-const usuarioRoutes = require('./routes/usuarioRoutes');
 const monitoreoRoutes = require('./routes/monitoreoRoutes');
 const detalleRoutes = require('./routes/detalleRoutes');
 const alertaRoutes = require('./routes/alertaRoutes');
@@ -24,7 +23,6 @@ connectDB();
 
 // Rutas API
 app.use('/api/auth', authRoutes);
-app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/monitoreos', monitoreoRoutes);
 app.use('/api', detalleRoutes);      // incluye: /monitoreos/:id/detalles y /detalles/:id
 app.use('/api', alertaRoutes);       // incluye: /alertas y /alertas/:id

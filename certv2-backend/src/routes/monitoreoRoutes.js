@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../auth/authMiddleware');
+const auth = require('../middlewares/authMiddleware');
 
 const {
   getMonitoreos,
@@ -25,3 +25,4 @@ router.put('/:id', actualizarMonitoreo);
 router.delete('/:id', eliminarMonitoreo);
 
 module.exports = router;
+ 

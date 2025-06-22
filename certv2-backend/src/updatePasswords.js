@@ -1,35 +1,90 @@
 const bcrypt = require('bcrypt');
-const Usuario = require('./models/Usuario');
-const { sequelize } = require('./db/PostgreSQL');
+const Usuario = require('../models/Usuario');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
-(async () => {
+// Registrar usuario
+const register = async (req, res) => {
+  const { nombre, email, password, rol } = req.body;
+
   try {
-    await sequelize.authenticate();
-    console.log('🔗 Conexión a la BD exitosa.');
+    const existe = await Usuario.findOne({ where: { email } });
+    if (existe) return res.status(400).json({ error: 'Correo ya registrado' });
 
-    const updates = [
-      { email: 'prueba@admin.com', password: 'admin' },
-      { email: 'prueba@soporte.com', password: 'soporte' },
-      { email: 'prueba@invitado.com', password: 'invitado' }
-    ];
+    const hashed = await bcrypt.hash(password, 10);
 
-    for (const u of updates) {
-      const hash = await bcrypt.hash(u.password, 10);
-      const result = await Usuario.update(
-        { password: hash },
-        { where: { email: u.email } }
-      );
+    const nuevo = await Usuario.create({
+      nombre,
+      email,
+      password: hashed,
+      rol: rol || 'invitado'
+    });
 
-      if (result[0] > 0) {
-        console.log(`✅ Contraseña actualizada para: ${u.email}`);
-      } else {
-        console.warn(`⚠️ Usuario no encontrado: ${u.email}`);
-      }
+    const token = jwt.sign({ id: nuevo.id, email, rol: nuevo.rol }, process.env.JWT_SECRET, {
+      expiresIn: '12h'
+    });
+
+    res.status(201).json({
+      token,
+      rol: nuevo.rol,
+      id: nuevo.id,
+      nombre: nuevo.nombre,
+      email: nuevo.email
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al registrar usuario' });
+  }
+};
+
+// Login de usuario
+const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const usuario = await Usuario.findOne({ where: { email } });
+    if (!usuario) return res.status(400).json({ error: 'Credenciales inválidas' });
+
+    const esValido = await bcrypt.compare(password, usuario.password);
+    if (!esValido) return res.status(400).json({ error: 'Credenciales inválidas' });
+
+    const token = jwt.sign({ id: usuario.id, email, rol: usuario.rol }, process.env.JWT_SECRET, {
+      expiresIn: '12h'
+    });
+
+    res.json({
+      token,
+      rol: usuario.rol,
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error en el login' });
+  }
+};
+
+// Obtener perfil del usuario autenticado
+const getProfile = async (req, res) => {
+  try {
+    const usuario = await Usuario.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    await sequelize.close();
-    console.log('✅ Script completado y conexión cerrada.');
-  } catch (error) {
-    console.error('❌ Error actualizando contraseñas:', error);
+    res.json(usuario);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener perfil' });
   }
-})();
+};
+
+module.exports = {
+  register,
+  login,
+  getProfile
+};
