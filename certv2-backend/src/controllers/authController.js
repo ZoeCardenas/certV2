@@ -5,7 +5,7 @@ require('dotenv').config();
 
 // Registrar usuario
 const register = async (req, res) => {
-  const { nombre, email, password } = req.body;
+  const { nombre, email, password, rol } = req.body;
 
   try {
     const existe = await Usuario.findOne({ where: { email } });
@@ -16,14 +16,21 @@ const register = async (req, res) => {
     const nuevo = await Usuario.create({
       nombre,
       email,
-      password: hashed
+      password: hashed,
+      rol: rol || 'user'
     });
 
     const token = jwt.sign({ id: nuevo.id, email }, process.env.JWT_SECRET, {
       expiresIn: '12h'
     });
 
-    res.status(201).json({ token });
+    res.status(201).json({
+      token,
+      rol: nuevo.rol,
+      id: nuevo.id,
+      nombre: nuevo.nombre,
+      email: nuevo.email
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al registrar usuario' });
@@ -45,7 +52,13 @@ const login = async (req, res) => {
       expiresIn: '12h'
     });
 
-    res.json({ token });
+    res.json({
+      token,
+      rol: usuario.rol,
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error en el login' });

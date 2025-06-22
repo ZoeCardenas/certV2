@@ -1,0 +1,112 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at center, #002a42, #000c1c);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  background-color: #0e1b2c;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+  width: 360px;
+  text-align: center;
+}
+
+.login-box h2 {
+  color: white;
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.login-box p {
+  color: #a0aec0;
+  margin-bottom: 30px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #1f2a3c;
+  color: white;
+  font-size: 14px;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.password-container {
+  position: relative;
+}
+
+.eye-button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 18px;
+  padding: 0;
+  margin: 0;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-button:hover {
+  color: white;
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #98f5c2;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.login-button:hover {
+  background-color: #6fe3ab;
+}
+
+.links a {
+  display: block;
+  color: #72fcd4;
+  font-size: 14px;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+.logo {
+  margin-top: 20px;
+  height: 40px;
+  filter: drop-shadow(0 0 2px #000);
+}
