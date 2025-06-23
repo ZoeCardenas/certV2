@@ -1,0 +1,45 @@
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: #031f34;
+  color: #e2f1ff;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1rem;
+}
+.logo,
+.brand-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+.logo img,
+.brand-footer img {
+  width: 32px;
+  height: 32px;
+}
+.menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  color: #c9d6e5;
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.1rem;
+  transition: background 0.2s;
+}
+.item svg { font-size: 1.1rem; }
+.item:hover,
+.item.active {
+  background: #0b2e4a;
+  color: #ffffff;
+}

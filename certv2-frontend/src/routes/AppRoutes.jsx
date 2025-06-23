@@ -1,13 +1,14 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import DashboardAdmin from "../pages/admin/DashboardAdmin";
 import DashboardAnalista from "../pages/analista/DashboardAnalista";
-import DashboardInvitado from "../pages/invitado/DashboardInvitado";
 import ProtectedRoute from "../auth/ProtectedRoute";
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/" element={<Navigate to="/login" replace />} />
     <Route path="/login" element={<Login />} />
+
     <Route
       path="/admin/dashboard"
       element={
@@ -16,6 +17,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+
     <Route
       path="/analista/dashboard"
       element={
@@ -24,14 +26,9 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
-    <Route
-      path="/invitado/dashboard"
-      element={
-        <ProtectedRoute allowedRoles={["admin", "analista", "invitado"]}>
-          <DashboardInvitado />
-        </ProtectedRoute>
-      }
-    />
+
+    <Route path="/unauthorized" element={<h1>No autorizado</h1>} />
+    <Route path="*" element={<h1>Página no encontrada</h1>} />
   </Routes>
 );
 
