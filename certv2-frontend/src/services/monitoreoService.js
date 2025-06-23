@@ -11,8 +11,8 @@ export const listMonitoreos = async () => {
 export const deleteMonitoreo  = (id)          => api.delete(`/monitoreos/${id}`);
 export const createMonitoreo  = (payload)     => api.post("/monitoreos", payload);
 export const updateMonitoreo  = (id, payload) => api.put(`/monitoreos/${id}`, payload);
-export const toggleMonitoreo  = (id)          => api.patch(`/monitoreos/${id}/toggle`);
-export const getMonitoreo     = (id)          => api.get(`/monitoreos/${id}`).then(r=>r.data);
+export const toggleMonitoreo = (id) =>
+  api.patch(`/monitoreos/${id}/toggle`).then((r) => r.data);export const getMonitoreo     = (id)          => api.get(`/monitoreos/${id}`).then(r=>r.data);
 export const listDominios = async () => {
   const rol = localStorage.getItem("rol");
   if (rol === "admin") {

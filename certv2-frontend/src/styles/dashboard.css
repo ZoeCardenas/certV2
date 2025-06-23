@@ -1,12 +1,14 @@
 /* ───────────────────────────
-   Layout general
+   Reset & fuente
 ───────────────────────────── */
 body {
   margin: 0;
   font-family: "Inter", Arial, sans-serif;
 }
 
-/* Wrapper (Sidebar + contenido) */
+/* ───────────────────────────
+   Layout general
+───────────────────────────── */
 .dashboard-wrapper {
   display: flex;
   min-height: 100vh;
@@ -17,7 +19,6 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* Degradado radial */
   background: radial-gradient(circle at top, #003e63 0%, #00213b 40%, #00131f 100%);
 }
 
@@ -44,12 +45,9 @@ body {
   cursor: pointer;
   transition: background 0.15s;
 }
+.logout-btn:hover { background: #ff7777; }
 
-.logout-btn:hover {
-  background: #ff7777;
-}
-
-/* Contenido scrollable */
+/* Contenido con scroll */
 .page-content {
   flex: 1;
   padding: 2rem;
@@ -120,6 +118,12 @@ body {
   font-size: 0.88rem;
 }
 
+/* ancho mínimo para org / dominio */
+.monitor-table th:nth-child(1),
+.monitor-table td:nth-child(1) { min-width: 190px; }
+.monitor-table th:nth-child(2),
+.monitor-table td:nth-child(2) { min-width: 155px; }
+
 .monitor-table thead {
   background: #0e2436;
   color: #8fb3cb;
@@ -154,9 +158,12 @@ body {
   margin-right: 0.65rem;
   cursor: pointer;
   color: #8fb3cb;
-  transition: color 0.18s;
+  transition: transform 0.18s, color 0.18s;
 }
-.actions svg:hover { color: #4de0ff; }
+.actions svg:hover {
+  color: #4de0ff;
+  transform: scale(1.15);
+}
 
 /* ───────────────────────────
    Loader
@@ -165,4 +172,72 @@ body {
   color: #eaf6ff;
   font-size: 1rem;
   padding: 2rem;
+}
+
+/* ───────────────────────────
+   Modal compartido (crear / detalle)
+───────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.modal-box label {
+  display: block;          /* cada etiqueta ocupa su línea */
+  margin-top: 12px;        /* pequeño espacio superior */
+  margin-bottom: 4px;      /* espacio antes del input */
+  font-weight: 500;
+}
+.modal-box input {
+  width: 100%;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.modal-box {
+  width: 420px;
+  background: #0f1f2e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: #eaf6ff;
+}
+
+.row-flex {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.row-flex input { flex: 1; padding: 6px; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.small-btn {
+  background: #4de0ff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.grey-btn {
+  background: #6c757d;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.green-btn {
+  background: #198754;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
 }

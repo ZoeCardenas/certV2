@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 
-import { listDominios, createMonitoreo } from "../../services/monitoreoService";
+import {
+  listDominios,
+  createMonitoreo,
+} from "../../services/monitoreoService";
+
 import MonitorTable from "../../components/MonitorTable";
 import "../../styles/dashboard.css";
 
-import { FaUsers, FaFileAlt, FaBell, FaServer, FaPlus } from "react-icons/fa";
+import {
+  FaUsers,
+  FaFileAlt,
+  FaBell,
+  FaServer,
+  FaPlus,
+} from "react-icons/fa";
 
-/* Tarjeta genérica */
+/* Tarjeta métrica */
 const StatCard = ({ icon: Icon, label, value }) => (
   <div className="stat-card">
     <div className="icon-wrapper">
@@ -21,39 +31,48 @@ const StatCard = ({ icon: Icon, label, value }) => (
 );
 
 const DashboardAdmin = () => {
+  /* métricas */
   const [stats, setStats] = useState({
     certificados: 0,
     alertas: 0,
     usuarios: 0,
     dominios: 0,
   });
+
+  /* dominios mostrados */
   const [dominios, setDominios] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* modal */
+  /* modal CREAR */
   const [showModal, setShowModal] = useState(false);
   const [org, setOrg] = useState("");
   const [rows, setRows] = useState([{ dominio: "", palabra_clave: "" }]);
 
-  /* ─ carga dominios ─ */
+  /* modal DETALLE */
+  const [detail, setDetail] = useState(null);
+
+  /* ───────── carga inicial ───────── */
   const fetchDominios = async () => {
     setLoading(true);
     try {
       const data = await listDominios();
+
       setDominios(
         data.map((d) => ({
           id: d.id,
+          organizacion: d.Monitoreo?.organizacion ?? "—",
           dominio: d.dominio,
           hora: new Date(d.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           }),
           coincidencia: d.palabra_clave ?? "—",
-          conteo: "",
           country: "MX",
           location: "México",
+          raw: d,
         }))
       );
+
       setStats((s) => ({ ...s, dominios: data.length }));
     } catch (e) {
       console.error("Error cargando dominios:", e);
@@ -61,39 +80,36 @@ const DashboardAdmin = () => {
       setLoading(false);
     }
   };
+  useEffect(() => { fetchDominios(); }, []);
 
-  useEffect(() => {
-    fetchDominios();
-  }, []);
-
-  /* ─ crear monitoreo ─ */
+  /* ───────── CRUD crear ───────── */
   const handleAddRow = () =>
     setRows([...rows, { dominio: "", palabra_clave: "" }]);
 
-  const handleChangeRow = (idx, field, val) => {
-    const copy = [...rows];
-    copy[idx][field] = val;
-    setRows(copy);
-  };
+  const handleChangeRow = (i, f, v) =>
+    setRows(rows.map((r, idx) => (idx === i ? { ...r, [f]: v } : r)));
 
   const handleCreate = async () => {
-    // limpia filas vacías
-    const detalles = rows.filter(
-      (r) => r.dominio.trim() && r.palabra_clave.trim()
-    );
-    if (!org.trim() || detalles.length === 0) {
-      alert("Completa organización y al menos un dominio/palabra");
-      return;
+    const detalles = rows
+      .filter((r) => r.dominio.trim() || r.palabra_clave.trim())
+      .map((r) => ({
+        dominio: r.dominio.trim(),
+        palabra_clave: r.palabra_clave.trim(),
+      }));
+
+    if (!org.trim() || detalles.length === 0 || detalles.some((d) => !d.dominio || !d.palabra_clave)) {
+      return alert("Completa organización y todas las filas dominio/palabra");
     }
+
     try {
-      await createMonitoreo({ organizacion: org, detalles });
+      await createMonitoreo({ organizacion: org.trim(), detalles });
       setShowModal(false);
       setOrg("");
       setRows([{ dominio: "", palabra_clave: "" }]);
-      fetchDominios(); // refresca tabla
+      fetchDominios();
     } catch (e) {
       console.error(e);
-      alert("Error al crear monitoreo");
+      alert(e.response?.data?.error ?? "Error al crear monitoreo");
     }
   };
 
@@ -120,81 +136,65 @@ const DashboardAdmin = () => {
           <StatCard icon={FaServer}  label="Dominios"      value={stats.dominios} />
         </section>
 
-        {/* tabla */}
-        <MonitorTable data={dominios} />
+        {/* tabla + detalle */}
+        <MonitorTable data={dominios} onDetail={(row) => setDetail(row)} />
       </div>
 
-      {/* ───────── Modal simple ───────── */}
+      {/* ───────── Modal CREAR ───────── */}
       {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.55)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 999,
-          }}
-        >
-          <div
-            style={{
-              width: "420px",
-              background: "#0f1f2e",
-              borderRadius: 12,
-              padding: "1.5rem",
-              color: "#eaf6ff",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>Nuevo monitoreo</h3>
+        <div className="modal-backdrop">
+          <div className="modal-box">
+            <h3>Nuevo monitoreo</h3>
 
             <label>Organización</label>
-            <input
-              value={org}
-              onChange={(e) => setOrg(e.target.value)}
-              style={{ width: "100%", padding: 8, marginBottom: 12 }}
-            />
+            <input value={org} onChange={(e) => setOrg(e.target.value)} />
 
             <label>Dominios & Palabras</label>
-            {rows.map((r, idx) => (
-              <div key={idx} style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+            {rows.map((r, i) => (
+              <div key={i} className="row-flex">
                 <input
                   placeholder="dominio"
                   value={r.dominio}
-                  onChange={(e) => handleChangeRow(idx, "dominio", e.target.value)}
-                  style={{ flex: 1, padding: 6 }}
+                  onChange={(e) => handleChangeRow(i, "dominio", e.target.value)}
                 />
                 <input
                   placeholder="palabra clave"
                   value={r.palabra_clave}
                   onChange={(e) =>
-                    handleChangeRow(idx, "palabra_clave", e.target.value)
+                    handleChangeRow(i, "palabra_clave", e.target.value)
                   }
-                  style={{ flex: 1, padding: 6 }}
                 />
               </div>
             ))}
-            <button
-              onClick={handleAddRow}
-              style={{ background: "#4de0ff", border: "none", padding: "4px 10px", borderRadius: 6, marginBottom: 12 }}
-            >
+            <button className="small-btn" onClick={handleAddRow}>
               + fila
             </button>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button
-                onClick={() => setShowModal(false)}
-                style={{ background: "#6c757d", border: "none", padding: "6px 16px", borderRadius: 6 }}
-              >
+            <div className="modal-actions">
+              <button className="grey-btn" onClick={() => setShowModal(false)}>
                 Cancelar
               </button>
-              <button
-                onClick={handleCreate}
-                style={{ background: "#198754", border: "none", padding: "6px 16px", borderRadius: 6 }}
-              >
+              <button className="green-btn" onClick={handleCreate}>
                 Guardar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ───────── Modal DETALLE ───────── */}
+      {detail && (
+        <div className="modal-backdrop" onClick={() => setDetail(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Detalle dominio</h3>
+            <p><b>ID:</b> {detail.id}</p>
+            <p><b>Organización:</b> {detail.organizacion}</p>
+            <p><b>Dominio:</b> {detail.dominio}</p>
+            <p><b>Palabra clave:</b> {detail.coincidencia}</p>
+            <p><b>Hora:</b> {detail.hora}</p>
+            <button className="green-btn" onClick={() => setDetail(null)}>
+              Cerrar
+            </button>
           </div>
         </div>
       )}
