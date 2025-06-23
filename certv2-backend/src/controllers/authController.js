@@ -17,12 +17,14 @@ const register = async (req, res) => {
       nombre,
       email,
       password: hashed,
-      rol: rol || 'user'
+      rol: rol || 'analista'
     });
 
-    const token = jwt.sign({ id: nuevo.id, email }, process.env.JWT_SECRET, {
-      expiresIn: '12h'
-    });
+    const token = jwt.sign(
+      { id: nuevo.id, email: nuevo.email, rol: nuevo.rol },
+      process.env.JWT_SECRET,
+      { expiresIn: '12h' }
+    );
 
     res.status(201).json({
       token,
@@ -48,9 +50,11 @@ const login = async (req, res) => {
     const esValido = await bcrypt.compare(password, usuario.password);
     if (!esValido) return res.status(400).json({ error: 'Credenciales inválidas' });
 
-    const token = jwt.sign({ id: usuario.id, email }, process.env.JWT_SECRET, {
-      expiresIn: '12h'
-    });
+    const token = jwt.sign(
+      { id: usuario.id, email: usuario.email, rol: usuario.rol },
+      process.env.JWT_SECRET,
+      { expiresIn: '12h' }
+    );
 
     res.json({
       token,
