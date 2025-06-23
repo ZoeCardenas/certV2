@@ -23,7 +23,7 @@ app.use(
   cors({
     origin: "http://localhost:5173",   // ← front en desarrollo
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH","OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     optionsSuccessStatus: 200,
   })

@@ -1,19 +1,20 @@
-// src/routes/detalleRoutes.js
-const express = require('express');
-const router = express.Router(); // ✅ DEBE IR ANTES DE usar router
-const auth = require('../middlewares/authMiddleware');
-const checkRol = require('../middlewares/checkRol'); // ✅ Faltaba importar esto
-
+const express = require("express");
+const router  = express.Router();
+const auth    = require("../middlewares/authMiddleware");
+const checkRol = require("../middlewares/checkRol");
 const {
   obtenerDetalles,
-  eliminarDetalle
-} = require('../controllers/detalleController');
+  actualizarDetalle,
+  eliminarDetalle,
+} = require("../controllers/detalleController");
 
-// ✅ Protege todas las rutas con autenticación
 router.use(auth);
 
-// ✅ Solo analistas pueden acceder a detalles
-router.get('/monitoreos/:id/detalles', checkRol(['analista']), obtenerDetalles);
-router.delete('/detalles/:id', checkRol(['analista']), eliminarDetalle);
+/* ver detalles por monitoreo */
+router.get("/monitoreos/:id/detalles", checkRol(["analista", "admin"]), obtenerDetalles);
+
+/* actualizar & borrar un detalle */
+router.put   ("/detalles/:id", checkRol(["analista", "admin"]), actualizarDetalle);
+router.delete("/detalles/:id", checkRol(["analista", "admin"]), eliminarDetalle);
 
 module.exports = router;

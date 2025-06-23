@@ -12,6 +12,7 @@ const LOG_FILE = 'alerts.log';
 
 let monitoreosActivos = [];
 
+// Cargar los monitoreos activos desde la base de datos
 async function cargarMonitoreos() {
   const datos = await Monitoreo.findAll({
     where: { activo: true },
@@ -23,6 +24,7 @@ async function cargarMonitoreos() {
 
   monitoreosActivos = [];
 
+  // Procesar cada monitoreo y almacenarlo en la variable monitoreosActivos
   datos.forEach(m => {
     m.MonitoreoDetalles.forEach(d => {
       monitoreosActivos.push({
@@ -41,15 +43,18 @@ async function cargarMonitoreos() {
   console.log(`✅ Monitoreos cargados: ${monitoreosActivos.length}`);
 }
 
+// Registrar alertas en el archivo de logs
 function logAlert(domain, organization) {
   const timestamp = new Date().toISOString();
   const log = `[${timestamp}] ORG: ${organization} | DOM: ${domain}\n`;
   fs.appendFileSync(LOG_FILE, log);
 }
 
+// Iniciar el monitoreo de CertStream
 function startCertStreamWatcher() {
   const ws = new WebSocket(CERTSTREAM_URL);
 
+  // Cuando se abre la conexión, cargamos los monitoreos y refrescamos cada 5 minutos
   ws.on('open', async () => {
     console.log("🔌 Conectado a CertStream.");
     await cargarMonitoreos();
@@ -58,6 +63,7 @@ function startCertStreamWatcher() {
     setInterval(cargarMonitoreos, 5 * 60 * 1000);
   });
 
+  // Procesar cada mensaje recibido de CertStream
   ws.on('message', (data) => {
     try {
       const message = JSON.parse(data);
@@ -65,6 +71,7 @@ function startCertStreamWatcher() {
 
       const allDomains = message.data.leaf_cert.all_domains || [];
 
+      // Comprobar si alguno de los dominios coincide con los monitoreos activos
       allDomains.forEach(domain => {
         const domainLower = domain.toLowerCase();
 
@@ -87,6 +94,7 @@ function startCertStreamWatcher() {
     }
   });
 
+  // Manejar errores de WebSocket
   ws.on('error', (err) => {
     console.error("❌ Error en CertStream:", err.message);
   });

@@ -1,10 +1,10 @@
-// middlewares/checkRol.js
 module.exports = function (rolesPermitidos = []) {
   return (req, res, next) => {
     try {
-      const rol = req.user.rol;
+      const rol = req.user?.rol;
 
       if (!rolesPermitidos.includes(rol)) {
+        console.error(`Acceso denegado para el rol: ${rol}`);
         return res.status(403).json({ error: 'Acceso denegado. Rol insuficiente' });
       }
 
