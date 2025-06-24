@@ -1,3 +1,4 @@
+// src/pages/admin/DashboardAdmin.jsx
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import {
@@ -8,42 +9,26 @@ import {
   deleteMonitoreo,
 } from "../../services/monitoreoService";
 import MonitorTable from "../../components/MonitorTable";
+import Swal from "sweetalert2";
+import { showConfirm, showSuccess, showError } from "../../utils/swal";
+import { FaPlus } from "react-icons/fa";
 import "../../styles/dashboard.css";
-import { FaUsers, FaFileAlt, FaBell, FaServer, FaPlus } from "react-icons/fa";
-
-// Tarjeta métrica
-const StatCard = ({ icon: Icon, label, value }) => (
-  <div className="stat-card">
-    <div className="icon-wrapper">
-      <Icon size={28} />
-    </div>
-    <div className="text-wrapper">
-      <span className="value">{value}</span>
-      <span className="label">{label}</span>
-    </div>
-  </div>
-);
 
 const DashboardAdmin = () => {
-  const [stats, setStats] = useState({
-    certificados: 0,
-    alertas: 0,
-    usuarios: 0,
-    dominios: 0,
-  });
-
   const [dominios, setDominios] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Control para modal inline de creación
   const [showCreate, setShowCreate] = useState(false);
   const [org, setOrg] = useState("");
   const [rows, setRows] = useState([{ dominio: "", palabra_clave: "" }]);
 
-  const [detail, setDetail] = useState(null);
+  // Edit inline
   const [edit, setEdit] = useState(null);
   const [editDom, setEditDom] = useState("");
   const [editKey, setEditKey] = useState("");
 
+  // Carga inicial de datos
   const fetchDominios = async () => {
     setLoading(true);
     try {
@@ -63,9 +48,9 @@ const DashboardAdmin = () => {
           activo: d.Monitoreo?.activo ?? true,
         }))
       );
-      setStats((s) => ({ ...s, dominios: data.length }));
     } catch (e) {
-      console.error("Error cargando dominios:", e);
+      console.error(e);
+      showError("Error", "No pude cargar los dominios.");
     } finally {
       setLoading(false);
     }
@@ -75,82 +60,116 @@ const DashboardAdmin = () => {
     fetchDominios();
   }, []);
 
+  // Añadir fila en modal create
   const addRow = () => setRows([...rows, { dominio: "", palabra_clave: "" }]);
-  const changeRow = (i, f, v) => setRows(rows.map((r, idx) => (idx === i ? { ...r, [f]: v } : r)));
+  const changeRow = (i, f, v) =>
+    setRows(rows.map((r, idx) => (idx === i ? { ...r, [f]: v } : r)));
 
+  // Crear monitoreo
   const handleCreate = async () => {
     const detalles = rows
       .filter((r) => r.dominio.trim() && r.palabra_clave.trim())
-      .map((r) => ({ dominio: r.dominio.trim(), palabra_clave: r.palabra_clave.trim() }));
+      .map((r) => ({
+        dominio: r.dominio.trim(),
+        palabra_clave: r.palabra_clave.trim(),
+      }));
 
     if (!org.trim() || !detalles.length) {
-      alert("Completa organización y filas dominio/palabra");
+      showError("Faltan datos", "Completa la organización y al menos un dominio/palabra.");
       return;
     }
 
     try {
       await createMonitoreo({ organizacion: org.trim(), detalles });
+      showSuccess("Creado", "Monitoreo creado correctamente.");
       setShowCreate(false);
       setOrg("");
       setRows([{ dominio: "", palabra_clave: "" }]);
       fetchDominios();
     } catch (e) {
       console.error(e);
-      alert(e.response?.data?.error ?? "Error al crear monitoreo");
+      showError("Error", e.response?.data?.error ?? "Error al crear monitoreo");
     }
   };
 
+  // Toggle activo/inactivo
   const handleToggle = async (row) => {
-    const ok = window.confirm(
-      row.activo ? "¿Seguro que quieres desactivar este monitoreo?" : "¿Activar monitoreo?"
+    const ok = await showConfirm(
+      row.activo ? "Desactivar monitoreo" : "Activar monitoreo",
+      row.activo
+        ? "¿Seguro que quieres desactivar este monitoreo?"
+        : "¿Deseas activar este monitoreo?"
     );
     if (!ok) return;
 
     try {
-      // Realizamos el toggle del monitoreo en el backend
       await toggleMonitoreo(row.id);
-
-      // Actualizamos el estado local solo para la fila correspondiente
-      setDominios((prevDominios) =>
-        prevDominios.map((dominio) =>
-          dominio.id === row.id ? { ...dominio, activo: !dominio.activo } : dominio
-        )
+      showSuccess("Hecho", `Monitoreo ${row.activo ? "desactivado" : "activado"}.`);
+      setDominios((prev) =>
+        prev.map((d) => (d.id === row.id ? { ...d, activo: !d.activo } : d))
       );
     } catch (e) {
       console.error(e);
-      alert("Error al cambiar estado");
+      showError("Error", "No pude cambiar el estado.");
     }
   };
 
+  // Mostrar detalle con SweetAlert2
+  const handleDetail = (row) => {
+    Swal.fire({
+      title: "Detalle de dominio",
+      html: `
+        <p><b>ID:</b> ${row.id}</p>
+        <p><b>Organización:</b> ${row.organizacion}</p>
+        <p><b>Dominio:</b> ${row.dominio}</p>
+        <p><b>Palabra clave:</b> ${row.coincidencia}</p>
+        <p><b>Hora:</b> ${row.hora}</p>
+      `,
+      confirmButtonText: "Cerrar",
+      background: "#0e1b2c",
+      color: "#fff",
+      confirmButtonColor: "#16a34a",
+    });
+  };
+
+  // Abrir modal inline de edición
   const openEdit = (row) => {
     setEdit(row);
     setEditDom(row.dominio);
-    setEditKey(row.coincidencia === "—" ? "" : row.coincidencia);
+    setEditKey(row.coincidencia);
   };
 
+  // Guardar edición
   const saveEdit = async () => {
     if (!editDom.trim() || !editKey.trim()) {
-      alert("Completa dominio y palabra clave");
+      showError("Faltan datos", "Completa dominio y palabra clave.");
       return;
     }
     try {
-      await updateDetalle(edit.id, { dominio: editDom.trim(), palabra_clave: editKey.trim() });
+      await updateDetalle(edit.id, {
+        dominio: editDom.trim(),
+        palabra_clave: editKey.trim(),
+      });
+      showSuccess("Actualizado", "Detalle modificado correctamente.");
       setEdit(null);
       fetchDominios();
     } catch (e) {
       console.error(e);
-      alert("Error al actualizar");
+      showError("Error", "No pude actualizar el detalle.");
     }
   };
 
+  // Eliminar un detalle
   const handleDelete = async (row) => {
-    if (!window.confirm("¿Eliminar este detalle?")) return;
+    const ok = await showConfirm("Eliminar detalle", "¿Eliminar este detalle?");
+    if (!ok) return;
     try {
       await deleteMonitoreo(row.id);
-      setDominios((d) => d.filter((x) => x.id !== row.id));
+      showSuccess("Eliminado", "Detalle eliminado correctamente.");
+      setDominios((prev) => prev.filter((d) => d.id !== row.id));
     } catch (e) {
       console.error(e);
-      alert("Error al eliminar");
+      showError("Error", "No pude eliminar el detalle.");
     }
   };
 
@@ -159,7 +178,6 @@ const DashboardAdmin = () => {
   return (
     <DashboardLayout>
       <div className="dashboard-container">
-        {/* botón crear */}
         <button
           className="logout-btn"
           style={{ marginBottom: "1.5rem", background: "#198754" }}
@@ -169,89 +187,102 @@ const DashboardAdmin = () => {
           Nuevo monitoreo
         </button>
 
-        {/* métricas */}
-        <section className="stats-grid">
-          <StatCard icon={FaFileAlt} label="Certificados" value={stats.certificados} />
-          <StatCard icon={FaBell} label="Alertas" value={stats.alertas} />
-          <StatCard icon={FaUsers} label="Usuarios" value={stats.usuarios} />
-          <StatCard icon={FaServer} label="Dominios" value={stats.dominios} />
-        </section>
-
-        {/* tabla */}
         <MonitorTable
           data={dominios}
-          onDetail={setDetail}
+          onDetail={handleDetail}
           onToggle={handleToggle}
           onEdit={openEdit}
           onDelete={handleDelete}
         />
       </div>
 
-      {/* Modal CREAR */}
+      {/* Modal Inline: Crear */}
       {showCreate && (
         <div className="modal-backdrop">
           <div className="modal-box">
             <h3>Nuevo monitoreo</h3>
 
             <label>Organización</label>
-            <input value={org} onChange={(e) => setOrg(e.target.value)} />
+            <input
+              type="text"
+              className="input"
+              placeholder="Organización"
+              value={org}
+              onChange={(e) => setOrg(e.target.value)}
+            />
 
-            <label style={{ marginTop: 12 }}>Dominios & Palabras</label>
+            <label style={{ marginTop: 16 }}>Dominios & Palabras</label>
             {rows.map((r, i) => (
-              <div key={i} className="row-flex">
+              <div key={i} className="row-flex" style={{ marginBottom: 12 }}>
                 <input
+                  type="text"
+                  className="input"
                   placeholder="dominio"
                   value={r.dominio}
                   onChange={(e) => changeRow(i, "dominio", e.target.value)}
                 />
                 <input
+                  type="text"
+                  className="input"
                   placeholder="palabra clave"
                   value={r.palabra_clave}
-                  onChange={(e) => changeRow(i, "palabra_clave", e.target.value)}
+                  onChange={(e) =>
+                    changeRow(i, "palabra_clave", e.target.value)
+                  }
                 />
               </div>
             ))}
-            <button className="small-btn" onClick={addRow}>+ fila</button>
+
+            <button
+              className="small-btn"
+              style={{ backgroundColor: "#38bdf8", color: "#000", marginBottom: 16 }}
+              onClick={addRow}
+            >
+              + fila
+            </button>
 
             <div className="modal-actions">
-              <button className="grey-btn" onClick={() => setShowCreate(false)}>Cancelar</button>
-              <button className="green-btn" onClick={handleCreate}>Guardar</button>
+              <button className="grey-btn" onClick={() => setShowCreate(false)}>
+                Cancelar
+              </button>
+              <button className="green-btn" onClick={handleCreate}>
+                Guardar
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal EDITAR */}
+      {/* Modal Inline: Editar */}
       {edit && (
         <div className="modal-backdrop" onClick={() => setEdit(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h3>Editar dominio</h3>
 
             <label>Dominio</label>
-            <input value={editDom} onChange={(e) => setEditDom(e.target.value)} />
+            <input
+              type="text"
+              className="input"
+              value={editDom}
+              onChange={(e) => setEditDom(e.target.value)}
+            />
 
-            <label style={{ marginTop: 8 }}>Palabra clave</label>
-            <input value={editKey} onChange={(e) => setEditKey(e.target.value)} />
+            <label style={{ marginTop: 12 }}>Palabra clave</label>
+            <input
+              type="text"
+              className="input"
+              value={editKey}
+              onChange={(e) => setEditKey(e.target.value)}
+            />
 
             <div className="modal-actions" style={{ marginTop: 14 }}>
-              <button className="grey-btn" onClick={() => setEdit(null)}>Cancelar</button>
-              <button className="green-btn" onClick={saveEdit}>Guardar</button>
+              <button className="grey-btn" onClick={() => setEdit(null)}>
+                Cancelar
+              </button>
+              <button className="green-btn" onClick={saveEdit}>
+                Guardar
+              </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal DETALLE */}
-      {detail && (
-        <div className="modal-backdrop" onClick={() => setDetail(null)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3>Detalle dominio</h3>
-            <p><b>ID:</b> {detail.id}</p>
-            <p><b>Organización:</b> {detail.organizacion}</p>
-            <p><b>Dominio:</b> {detail.dominio}</p>
-            <p><b>Palabra clave:</b> {detail.coincidencia}</p>
-            <p><b>Hora:</b> {detail.hora}</p>
-            <button className="green-btn" onClick={() => setDetail(null)}>Cerrar</button>
           </div>
         </div>
       )}

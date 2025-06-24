@@ -1,9 +1,12 @@
+// src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
+import Register from "../pages/auth/Register";
 import DashboardAdmin from "../pages/admin/DashboardAdmin";
+import Inicio from "../pages/admin/Inicio";
+import Usuarios from "../pages/admin/Usuarios";     // ← Importa Usuarios
 import DashboardAnalista from "../pages/analista/DashboardAnalista";
 import ProtectedRoute from "../auth/ProtectedRoute";
-import Register from "../pages/auth/Register";
 
 const AppRoutes = () => (
   <Routes>
@@ -11,6 +14,15 @@ const AppRoutes = () => (
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
 
+    {/* Panel de Admin */}
+    <Route
+      path="/admin/inicio"
+      element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Inicio />
+        </ProtectedRoute>
+      }
+    />
     <Route
       path="/admin/dashboard"
       element={
@@ -19,6 +31,16 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    <Route
+      path="/admin/usuarios"                  // ← Nueva ruta
+      element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Usuarios />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Panel de Analista */}
     <Route
       path="/analista/dashboard"
       element={

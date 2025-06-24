@@ -1,0 +1,76 @@
+/* users-table.css */
+
+.ut-wrapper {
+  background-color: #0e1b2c;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ut-title {
+  color: #fff;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.ut-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.ut-th {
+  color: #cbd5e1;
+  text-align: left;
+  padding: 12px;
+  font-weight: 500;
+}
+
+.ut-row {
+  background-color: #0e1b2c;
+  transition: background-color 0.2s;
+}
+
+.ut-row:hover {
+  background-color: #123;
+}
+
+.ut-td {
+  color: #e2e8f0;
+  padding: 12px;
+  vertical-align: middle;
+}
+
+.ut-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.ut-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ut-icon {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  transition: color 0.2s, transform 0.1s;
+}
+
+.ut-icon:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.ut-delete {
+  color: #e74a3b;
+}
+
+.ut-delete:hover {
+  color: #ff4e42;
+}

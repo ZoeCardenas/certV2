@@ -1,3 +1,4 @@
+// src/services/certstreamService.js
 const WebSocket = require('ws');
 const fs = require('fs');
 const { sendTelegramAlert } = require('./telegramService');
@@ -5,37 +6,46 @@ const Monitoreo = require('../models/Monitoreo');
 const MonitoreoDetalle = require('../models/MonitoreoDetalle');
 const Usuario = require('../models/Usuario');
 
-const { Op } = require('sequelize');
-
 const CERTSTREAM_URL = 'wss://certstream.calidog.io/';
 const LOG_FILE = 'alerts.log';
 
 let monitoreosActivos = [];
 
-// Cargar los monitoreos activos desde la base de datos
+/**
+ * Carga todos los detalles de monitoreo activos junto con su usuario.
+ * Solo añade aquellos que tengan telegram_token y telegram_chat_id válidos.
+ */
 async function cargarMonitoreos() {
   const datos = await Monitoreo.findAll({
     where: { activo: true },
     include: [
       { model: MonitoreoDetalle },
-      { model: Usuario, attributes: ['email', 'telegram_token', 'telegram_chat_id'] }
+      { model: Usuario, attributes: ['telegram_token', 'telegram_chat_id'] }
     ]
   });
 
   monitoreosActivos = [];
 
-  // Procesar cada monitoreo y almacenarlo en la variable monitoreosActivos
   datos.forEach(m => {
+    // Si el monitoreo no tiene usuario o no tiene tokens, lo reportamos y saltamos
+    if (!m.Usuario) {
+      console.warn(`⚠️ Monitoreo ${m.id} sin Usuario asociado, se omite.`);
+      return;
+    }
+    const { telegram_token: token, telegram_chat_id: chatId } = m.Usuario;
+    if (!token || !chatId) {
+      console.warn(`⚠️ Usuario ${m.usuario_id} sin telegram_token/chatId, se omite.`);
+      return;
+    }
+
+    // Por cada detalle válido, añadimos la configuración
     m.MonitoreoDetalles.forEach(d => {
       monitoreosActivos.push({
+        detalleId: d.id,
         dominio: d.dominio.toLowerCase(),
         palabra_clave: d.palabra_clave.toLowerCase(),
         organizacion: m.organizacion,
-        usuario_id: m.usuario_id,
-        telegram: {
-          token: m.Usuario.telegram_token,
-          chatId: m.Usuario.telegram_chat_id
-        }
+        telegram: { token, chatId }
       });
     });
   });
@@ -43,64 +53,77 @@ async function cargarMonitoreos() {
   console.log(`✅ Monitoreos cargados: ${monitoreosActivos.length}`);
 }
 
-// Registrar alertas en el archivo de logs
+/**
+ * Registra en archivo de log cada alerta.
+ */
 function logAlert(domain, organization) {
   const timestamp = new Date().toISOString();
-  const log = `[${timestamp}] ORG: ${organization} | DOM: ${domain}\n`;
-  fs.appendFileSync(LOG_FILE, log);
+  const line = `[${timestamp}] ORG: ${organization} | DOM: ${domain}\n`;
+  fs.appendFileSync(LOG_FILE, line);
 }
 
-// Iniciar el monitoreo de CertStream
+/**
+ * Inicia la escucha en CertStream y dispara alertas por Telegram.
+ */
 function startCertStreamWatcher() {
   const ws = new WebSocket(CERTSTREAM_URL);
 
-  // Cuando se abre la conexión, cargamos los monitoreos y refrescamos cada 5 minutos
   ws.on('open', async () => {
     console.log("🔌 Conectado a CertStream.");
     await cargarMonitoreos();
-
-    // Refrescar cada 5 minutos los monitoreos activos
+    // Refresca cada 5 minutos
     setInterval(cargarMonitoreos, 5 * 60 * 1000);
   });
 
-  // Procesar cada mensaje recibido de CertStream
   ws.on('message', (data) => {
+    let message;
     try {
-      const message = JSON.parse(data);
-      if (message.message_type !== 'certificate_update') return;
-
-      const allDomains = message.data.leaf_cert.all_domains || [];
-
-      // Comprobar si alguno de los dominios coincide con los monitoreos activos
-      allDomains.forEach(domain => {
-        const domainLower = domain.toLowerCase();
-
-        monitoreosActivos.forEach(config => {
-          const matchDominio = domainLower.includes(config.dominio);
-          const matchKeyword = domainLower.includes(config.palabra_clave);
-
-          if (matchDominio || matchKeyword) {
-            const alertMsg = `🚨 Coincidencia detectada\n🔹 Dominio: ${domain}\n🏢 Organización: ${config.organizacion}`;
-
-            console.log(alertMsg);
-            sendTelegramAlert(config.telegram.token, config.telegram.chatId, alertMsg);
-            logAlert(domain, config.organizacion);
-          }
-        });
-      });
-
-    } catch (err) {
-      console.error("❌ Error procesando mensaje:", err.message);
+      message = JSON.parse(data);
+    } catch {
+      return;
     }
+    if (message.message_type !== 'certificate_update') return;
+
+    const allDomains = message.data.leaf_cert.all_domains || [];
+    allDomains.forEach(domain => {
+      const domLower = domain.toLowerCase();
+
+      monitoreosActivos.forEach(cfg => {
+        if (
+          domLower.includes(cfg.dominio) ||
+          domLower.includes(cfg.palabra_clave)
+        ) {
+          const text =
+            `🚨 *Alerta* 🚨\n` +
+            `🏢 *Organización:* ${cfg.organizacion}\n` +
+            `🌐 *Dominio detectado:* ${domain}\n` +
+            `🔑 *Palabra clave:* ${cfg.palabra_clave}`;
+
+          // Envía por Telegram
+          sendTelegramAlert(cfg.telegram.token, cfg.telegram.chatId, text)
+            .then(() => console.log(`✅ Enviado alerta para detalle ${cfg.detalleId}`))
+            .catch(err =>
+              console.error(`❌ Error enviando a ${cfg.telegram.chatId}:`, err.message)
+            );
+
+          // Lo logueamos localmente
+          logAlert(domain, cfg.organizacion);
+        }
+      });
+    });
   });
 
-  // Manejar errores de WebSocket
-  ws.on('error', (err) => {
-    console.error("❌ Error en CertStream:", err.message);
+  ws.on('error', err => {
+    console.error("❌ Error en WebSocket CertStream:", err.message);
+  });
+
+  ws.on('close', () => {
+    console.log("⚠️ CertStream desconectado, reconectando en 5s...");
+    setTimeout(startCertStreamWatcher, 5000);
   });
 }
 
 module.exports = {
   startCertStreamWatcher,
-  cargarMonitoreos // ✅ AÑADE ESTA LÍNEA
+  cargarMonitoreos
 };

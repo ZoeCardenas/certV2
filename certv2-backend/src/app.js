@@ -10,48 +10,45 @@ const detalleRoutes    = require("./routes/detalleRoutes");
 const alertaRoutes     = require("./routes/alertaRoutes");
 const emailRoutes      = require("./routes/emailRoutes");
 const configRouter     = require("./routes/configRoutes");
+const usuarioRoutes    = require("./routes/usuarioRoutes");
+// const certificadoRoutes = require("./routes/certificadoRoutes"); // si lo tienes
 const { connectDB }    = require("./db/PostgreSQL");
 
 const app = express();
 
-/* ────────────────────────────────────────────────────────────
-   Middlewares globales
-   ──────────────────────────────────────────────────────────── */
-
-// CORS – permite al frontend de Vite (5173) acceder sin bloqueos
+// Middlewares globales
 app.use(
   cors({
-    origin: "http://localhost:5173",   // ← front en desarrollo
+    origin: "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH","OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,
+    methods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
+    allowedHeaders: ["Content-Type","Authorization"],
+    optionsSuccessStatus: 200
   })
 );
 
-// Helmet con CORP desactivado para evitar bloqueos extra
 app.use(
   helmet({
-    crossOriginResourcePolicy: false,
+    crossOriginResourcePolicy: false
   })
 );
 
 // Parseo JSON
 app.use(express.json());
 
-/* ────────────────────────────────────────────────────────────
-   Conexión a PostgreSQL
-   ──────────────────────────────────────────────────────────── */
+// Conexión a PostgreSQL
 connectDB();
 
-/* ────────────────────────────────────────────────────────────
-   Rutas API
-   ──────────────────────────────────────────────────────────── */
-app.use("/api/auth",        authRoutes);
-app.use("/api/monitoreos",  monitoreoRoutes);
-app.use("/api",             detalleRoutes);   // /monitoreos/:id/detalles y /detalles/:id
-app.use("/api",             alertaRoutes);    // /alertas y /alertas/:id
-app.use("/api/email",       emailRoutes);     // pruebas de correo
-app.use("/api/config",      configRouter);    // configuración
+// Rutas API
+app.use("/api/auth",       authRoutes);
+app.use("/api/monitoreos", monitoreoRoutes);
+app.use("/api",            detalleRoutes);
+app.use("/api",            alertaRoutes);
+app.use("/api/email",      emailRoutes);
+app.use("/api/config",     configRouter);
+
+// Monta aquí las rutas de usuarios y certificados:
+app.use("/api",            usuarioRoutes);
+// app.use("/api",            certificadoRoutes); // descomenta si tienes este router
 
 module.exports = app;

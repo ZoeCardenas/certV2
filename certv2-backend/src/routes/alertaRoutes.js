@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middlewares/authMiddleware');
+const auth = require('../middlewares/authMiddleware');
 const checkRol = require('../middlewares/checkRol');
-const { getAlertas, getAlerta } = require('../controllers/alertaController');
+const {
+  getAlertas,
+  countAlertas,
+  getAlerta
+} = require('../controllers/alertaController');
 
-router.use(authMiddleware);
+router.use(auth);
 
-// 🛡️ Admin: Ver todas las alertas
-router.get('/alertas', checkRol(['admin']), getAlertas);
+// 1️⃣ Rutas estáticas primero:
+router.get('/alertas/count',  checkRol(['admin','analista']), countAlertas);
+router.get('/alertas',        checkRol(['admin','analista']), getAlertas);
 
-// 🛡️ Analista: Ver las suyas (podrías tener otro endpoint como /alertas/mias)
-router.get('/alertas/:id', checkRol(['analista', 'admin']), getAlerta);
+// 2️⃣ Luego la ruta dinámica:
+router.get('/alertas/:id',    checkRol(['admin','analista']), getAlerta);
 
 module.exports = router;

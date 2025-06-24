@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import { NavLink } from "react-router-dom";
 import {
   FaHome,
@@ -15,11 +16,16 @@ const Sidebar = () => (
     </div>
 
     <nav className="menu">
-      <NavLink to="/" className="item">
+      <NavLink to="/admin/inicio" className="item">
         <FaHome /> <span>Inicio</span>
       </NavLink>
       <NavLink to="/admin/dashboard" className="item">
-        <FaWaveSquare /> <span>Monitoreo en<br />Tiempo Real</span>
+        <FaWaveSquare />{" "}
+        <span>
+          Monitoreo en
+          <br />
+          Tiempo Real
+        </span>
       </NavLink>
       <NavLink to="/admin/certificados" className="item">
         <FaCertificate /> <span>Certificados</span>
