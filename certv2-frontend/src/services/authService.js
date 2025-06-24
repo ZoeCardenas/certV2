@@ -1,22 +1,31 @@
+
+// src/services/authService.js
 import api from './api';
 
 export const loginUser = async (email, password) => {
-  const response = await api.post('/auth/login', { email, password });
-
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('usuario', JSON.stringify(response.data.usuario)); // Guarda rol, email, etc.
-    api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+  const res = await api.post('/auth/login', { email, password });
+  const data = res.data;
+  if (data.token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
   }
-
-  return response.data;
+  return data;
 };
-export const getProfile  = () => api.get("/auth/perfil").then(r => r.data);
-export const updateMe    = (payload) => api.put("/auth/perfil", payload);
-export const registerUser = (payload) => api.post("/auth/register", payload);
+
+export const registerUser = async (payload) => {
+  // payload: { nombre, email, password }
+  const res = await api.post('/auth/register', payload);
+  const data = res.data;
+  if (data.token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+  }
+  return data;
+};
+
+export const getProfile = async () => {
+  const res = await api.get('/auth/me');
+  return res.data;
+};
 
 export const logoutUser = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('usuario');
   delete api.defaults.headers.common['Authorization'];
 };

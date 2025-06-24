@@ -1,7 +1,7 @@
-/* src/pages/auth/Login.jsx */
+// src/pages/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../../services/authService";   // ← helper centralizado
+import { loginUser } from "../../services/authService";
 import "../../styles/login.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -73,7 +73,7 @@ const Login = () => {
 
         <div className="links">
           <a href="#">¿Olvidaste tu contraseña?</a>
-          <a href="#">Crear cuenta</a>
+          <a href="/register">Crear cuenta</a>  {/* ¡Actualizado: enlaza a la ruta de registro! */}
         </div>
 
         <img src="/logo-capa8.png" alt="capa8" className="logo" />
