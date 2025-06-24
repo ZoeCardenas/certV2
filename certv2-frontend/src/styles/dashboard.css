@@ -241,3 +241,35 @@ body {
   border-radius: 6px;
   cursor: pointer;
 }
+
+.tabla-container {
+  padding: 1rem;
+  background-color: #0e1a2b;
+  border-radius: 12px;
+  color: #fff;
+}
+
+.titulo-seccion {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.tabla-principal {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-principal th,
+.tabla-principal td {
+  border: 1px solid #263445;
+  padding: 10px;
+  text-align: center;
+}
+
+.badge {
+  background-color: #1e90ff;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.85rem;
+}

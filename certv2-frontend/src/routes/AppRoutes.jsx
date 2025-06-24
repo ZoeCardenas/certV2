@@ -5,9 +5,12 @@ import Register from "../pages/auth/Register";
 import DashboardAdmin from "../pages/admin/DashboardAdmin";
 import Inicio from "../pages/admin/Inicio";
 import Usuarios from "../pages/admin/Usuarios";
-import Perfil from "../pages/admin/Perfil";           // ← Importa Perfil
+import Perfil from "../pages/admin/Perfil";
 import DashboardAnalista from "../pages/analista/DashboardAnalista";
 import ProtectedRoute from "../auth/ProtectedRoute";
+
+// ✅ Importa la vista de alertas
+import Alertas from "../pages/admin/Alertas";
 
 const AppRoutes = () => (
   <Routes>
@@ -43,8 +46,16 @@ const AppRoutes = () => (
     <Route
       path="/admin/perfil"
       element={
-        <ProtectedRoute allowedRoles={['admin','analista']}>
+        <ProtectedRoute allowedRoles={['admin', 'analista']}>
           <Perfil />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/alertas"
+      element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Alertas />
         </ProtectedRoute>
       }
     />
@@ -53,7 +64,7 @@ const AppRoutes = () => (
     <Route
       path="/analista/dashboard"
       element={
-        <ProtectedRoute allowedRoles={['admin','analista']}>
+        <ProtectedRoute allowedRoles={['admin', 'analista']}>
           <DashboardAnalista />
         </ProtectedRoute>
       }

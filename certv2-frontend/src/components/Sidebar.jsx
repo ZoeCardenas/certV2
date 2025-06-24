@@ -1,52 +1,78 @@
-// src/components/Sidebar.jsx
+
+
+// src/components/Sidebar.jsx (actualizado con badge)
 import { NavLink } from "react-router-dom";
 import {
   FaHome,
   FaWaveSquare,
   FaCertificate,
   FaUsers,
-  FaUserCircle,  // importamos icono para "Mi perfil"
+  FaUserCircle,
 } from "react-icons/fa";
 import "../styles/sidebar.css";
+import { useEffect, useState } from "react";
+import { countAlertas } from "../services/alertaService";
 
-const Sidebar = () => (
-  <aside className="sidebar">
-    <div className="logo">
-      <img src="/capa8-logo.png" alt="CertWatcher" />
-      <span>CertWatcher</span>
-    </div>
+const Sidebar = () => {
+  const [alertaCount, setAlertaCount] = useState(0);
 
-    <nav className="menu">
-      <NavLink to="/admin/inicio" className="item">
-        <FaHome /> <span>Inicio</span>
-      </NavLink>
-      <NavLink to="/admin/dashboard" className="item">
-        <FaWaveSquare />
-        <span>
-          Monitoreo en
-          <br />
-          Tiempo Real
-        </span>
-      </NavLink>
-      <NavLink to="/admin/certificados" className="item">
-        <FaCertificate /> <span>Certificados</span>
-      </NavLink>
-      <NavLink to="/admin/usuarios" className="item">
-        <FaUsers /> <span>Usuarios</span>
-      </NavLink>
-    </nav>
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const count = await countAlertas();
+        setAlertaCount(count);
+      } catch (e) {
+        console.error("Error al contar alertas", e);
+      }
+    };
+    fetchCount();
+  }, []);
 
-    {/* Nueva sección “Mi perfil” justo encima del footer */}
-    <nav className="menu menu-bottom">
-      <NavLink to="/admin/perfil" className="item">
-        <FaUserCircle /> <span>Mi perfil</span>
-      </NavLink>
-    </nav>
+  return (
+    <aside className="sidebar">
+      <div className="logo">
+        <img src="/capa8-logo.png" alt="CertWatcher" />
+        <span>CertWatcher</span>
+      </div>
 
-    <div className="brand-footer">
-      <img src="/capa8-logo.png" alt="capa8" />
-    </div>
-  </aside>
-);
+      <nav className="menu">
+        <NavLink to="/admin/inicio" className="item">
+          <FaHome /> <span>Inicio</span>
+        </NavLink>
+        <NavLink to="/admin/dashboard" className="item">
+          <FaWaveSquare />
+          <span>
+            Monitoreo en
+            <br />
+            Tiempo Real
+          </span>
+        </NavLink>
+        <NavLink to="/admin/alertas" className="item">
+          <FaCertificate />
+          <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            Alertas en Tiempo Real
+            {alertaCount > 0 && (
+              <span className="badge-alerta">{alertaCount}</span>
+            )}
+          </span>
+        </NavLink>
+        <NavLink to="/admin/usuarios" className="item">
+          <FaUsers /> <span>Usuarios</span>
+        </NavLink>
+      </nav>
+
+      <nav className="menu menu-bottom">
+        <NavLink to="/admin/perfil" className="item">
+          <FaUserCircle /> <span>Mi perfil</span>
+        </NavLink>
+      </nav>
+
+      <div className="brand-footer">
+        <img src="/capa8-logo.png" alt="capa8" />
+      </div>
+    </aside>
+  );
+};
 
 export default Sidebar;
+

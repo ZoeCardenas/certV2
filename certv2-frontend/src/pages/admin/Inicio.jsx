@@ -1,4 +1,3 @@
-// src/pages/admin/Inicio.jsx
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import {
@@ -9,6 +8,7 @@ import {
 } from '../../services/monitoreoService';
 import { FaUsers, FaFileAlt, FaBell, FaServer } from 'react-icons/fa';
 import StatCard from '../../components/StatCard';
+import AlertTable from '../../components/AlertTable'; // 👈 importamos alertas recientes
 import '../../styles/dashboard.css';
 
 const Inicio = () => {
@@ -32,7 +32,6 @@ const Inicio = () => {
           listDominios(),
           listAlertas(),
           countAlertas().catch(err => {
-            // Si 500, asumimos que no hay alertas
             if (err.response?.status === 500) {
               setMensaje('Aún no hay alertas registradas.');
               return 0;
@@ -71,6 +70,10 @@ const Inicio = () => {
         <StatCard icon={FaBell} label="Alertas totales"    value={stats.alertas} />
         <StatCard icon={FaUsers} label="Usuarios"          value={stats.usuarios} />
         <StatCard icon={FaServer} label="Dominios"         value={stats.dominios} />
+      </section>
+
+      <section style={{ marginTop: '2rem' }}>
+        <AlertTable limit={5} /> {/* 👈 muestra solo las 5 alertas más recientes */}
       </section>
     </DashboardLayout>
   );
