@@ -21,10 +21,13 @@ export const registerUser = async (payload) => {
   return data;
 };
 
-export const getProfile = async () => {
-  const res = await api.get('/auth/me');
-  return res.data;
-};
+// src/services/authService.js
+export const getMyProfile = () =>
+  api
+    .get('/auth/me', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then(res => res.data);
 
 export const logoutUser = () => {
   delete api.defaults.headers.common['Authorization'];

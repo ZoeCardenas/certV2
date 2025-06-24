@@ -69,11 +69,24 @@ const login = async (req, res) => {
   }
 };
 
+// src/controllers/authController.js
 // Obtener perfil del usuario autenticado
 const getProfile = async (req, res) => {
   try {
     const usuario = await Usuario.findByPk(req.user.id, {
-      attributes: { exclude: ['password'] }
+      // Incluye todos los campos que quieras exponer
+      attributes: [
+        'id',
+        'nombre',
+        'email',
+        'rol',
+        'activo',
+        'telegram_token',
+        'telegram_chat_id',
+        'correo_alerta',
+        'createdAt',
+        'updatedAt'
+      ]
     });
 
     if (!usuario) {
@@ -86,6 +99,7 @@ const getProfile = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener perfil' });
   }
 };
+
 
 module.exports = {
   register,

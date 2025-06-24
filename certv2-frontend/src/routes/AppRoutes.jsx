@@ -4,7 +4,8 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import DashboardAdmin from "../pages/admin/DashboardAdmin";
 import Inicio from "../pages/admin/Inicio";
-import Usuarios from "../pages/admin/Usuarios";     // ← Importa Usuarios
+import Usuarios from "../pages/admin/Usuarios";
+import Perfil from "../pages/admin/Perfil";           // ← Importa Perfil
 import DashboardAnalista from "../pages/analista/DashboardAnalista";
 import ProtectedRoute from "../auth/ProtectedRoute";
 
@@ -32,10 +33,18 @@ const AppRoutes = () => (
       }
     />
     <Route
-      path="/admin/usuarios"                  // ← Nueva ruta
+      path="/admin/usuarios"
       element={
         <ProtectedRoute allowedRoles={['admin']}>
           <Usuarios />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/perfil"
+      element={
+        <ProtectedRoute allowedRoles={['admin','analista']}>
+          <Perfil />
         </ProtectedRoute>
       }
     />

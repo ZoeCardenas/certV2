@@ -5,6 +5,7 @@ import {
   FaWaveSquare,
   FaCertificate,
   FaUsers,
+  FaUserCircle,  // importamos icono para "Mi perfil"
 } from "react-icons/fa";
 import "../styles/sidebar.css";
 
@@ -20,7 +21,7 @@ const Sidebar = () => (
         <FaHome /> <span>Inicio</span>
       </NavLink>
       <NavLink to="/admin/dashboard" className="item">
-        <FaWaveSquare />{" "}
+        <FaWaveSquare />
         <span>
           Monitoreo en
           <br />
@@ -32,6 +33,13 @@ const Sidebar = () => (
       </NavLink>
       <NavLink to="/admin/usuarios" className="item">
         <FaUsers /> <span>Usuarios</span>
+      </NavLink>
+    </nav>
+
+    {/* Nueva sección “Mi perfil” justo encima del footer */}
+    <nav className="menu menu-bottom">
+      <NavLink to="/admin/perfil" className="item">
+        <FaUserCircle /> <span>Mi perfil</span>
       </NavLink>
     </nav>
 
