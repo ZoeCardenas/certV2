@@ -25,7 +25,12 @@ const Login = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("rol", rol.toLowerCase());
 
-      navigate(`/${rol.toLowerCase()}/dashboard`, { replace: true });
+      // Redirección específica por rol
+      if (rol.toLowerCase() === "admin") {
+        navigate("/admin/inicio", { replace: true });
+      } else if (rol.toLowerCase() === "analista") {
+        navigate("/analista/inicio", { replace: true });
+      }
     } catch (error) {
       console.error("Axios error ›", error);
       alert(
@@ -73,7 +78,7 @@ const Login = () => {
 
         <div className="links">
           <a href="#">¿Olvidaste tu contraseña?</a>
-          <a href="/register">Crear cuenta</a>  {/* ¡Actualizado: enlaza a la ruta de registro! */}
+          <a href="/register">Crear cuenta</a>
         </div>
 
         <img src="/logo-capa8.png" alt="capa8" className="logo" />

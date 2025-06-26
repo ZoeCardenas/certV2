@@ -41,7 +41,13 @@ const register = async (req, res) => {
 
 // Login de usuario
 const login = async (req, res) => {
+  console.log("🧪 req.body:", req.body); // 👈 Depuración
+
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Faltan campos" });
+  }
 
   try {
     const usuario = await Usuario.findOne({ where: { email } });
@@ -69,12 +75,10 @@ const login = async (req, res) => {
   }
 };
 
-// src/controllers/authController.js
 // Obtener perfil del usuario autenticado
 const getProfile = async (req, res) => {
   try {
     const usuario = await Usuario.findByPk(req.user.id, {
-      // Incluye todos los campos que quieras exponer
       attributes: [
         'id',
         'nombre',
@@ -99,7 +103,6 @@ const getProfile = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener perfil' });
   }
 };
-
 
 module.exports = {
   register,

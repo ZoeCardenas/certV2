@@ -1,24 +1,36 @@
 // src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
+
+// Vistas de autenticación
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+
+// Vistas de administrador
 import DashboardAdmin from "../pages/admin/DashboardAdmin";
 import Inicio from "../pages/admin/Inicio";
 import Usuarios from "../pages/admin/Usuarios";
 import Perfil from "../pages/admin/Perfil";
-import DashboardAnalista from "../pages/analista/DashboardAnalista";
-import ProtectedRoute from "../auth/ProtectedRoute";
-
-// ✅ Importa la vista de alertas
 import Alertas from "../pages/admin/Alertas";
+
+// Vistas de analista
+import DashboardAnalista from "../pages/analista/DashboardAnalista";
+import InicioAnalista from "../pages/analista/InicioAnalista";
+import PerfilAnalista from "../pages/analista/Perfil";
+import AlertasAnalista from "../pages/analista/Alertas";
+
+// Ruta protegida
+import ProtectedRoute from "../auth/ProtectedRoute";
 
 const AppRoutes = () => (
   <Routes>
+    {/* Redirección base */}
     <Route path="/" element={<Navigate to="/login" replace />} />
+
+    {/* Rutas públicas */}
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
 
-    {/* Panel de Admin */}
+    {/* Rutas de administrador */}
     <Route
       path="/admin/inicio"
       element={
@@ -60,7 +72,15 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Panel de Analista */}
+    {/* Rutas de analista */}
+    <Route
+      path="/analista/inicio"
+      element={
+        <ProtectedRoute allowedRoles={['analista']}>
+          <InicioAnalista />
+        </ProtectedRoute>
+      }
+    />
     <Route
       path="/analista/dashboard"
       element={
@@ -69,7 +89,24 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    <Route
+      path="/analista/perfil"
+      element={
+        <ProtectedRoute allowedRoles={['analista']}>
+          <PerfilAnalista />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/analista/alertas"
+      element={
+        <ProtectedRoute allowedRoles={['analista']}>
+          <AlertasAnalista />
+        </ProtectedRoute>
+      }
+    />
 
+    {/* Vistas por defecto */}
     <Route path="/unauthorized" element={<h1>No autorizado</h1>} />
     <Route path="*" element={<h1>Página no encontrada</h1>} />
   </Routes>

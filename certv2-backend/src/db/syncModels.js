@@ -11,9 +11,9 @@ require('../models/Alerta');
     console.log('🔄 Sincronizando tablas en la base de datos certv2...');
     
     // Alternativas:
-    // await sequelize.sync({ force: true });  // Borra y recrea todo
+    await sequelize.sync({ force: true });  // Borra y recrea todo
     // await sequelize.sync({ alter: true });  // Solo ajusta estructuras
-    await sequelize.sync({ alter: true });
+    // await sequelize.sync({ alter: true });
 
     console.log('✅ ¡Todas las tablas fueron sincronizadas correctamente!');
     await sequelize.close();
