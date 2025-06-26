@@ -1,3 +1,56 @@
+/* src/styles/login.css */
+/* … tu CSS previo arriba … */
+
+/* === Caja genérica para input === */
+.password-container {
+  position: relative;
+  background-color: #1f2a3c;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+/* El input ocupa todo el ancho, reserva espacio para el icono si lo hay */
+.password-input {
+  width: 100%;
+  padding: 12px 44px 12px 12px; /* top | right | bottom | left */
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.password-input::placeholder {
+  color: #94a3b8;
+}
+.password-input:focus {
+  outline: none;
+}
+
+/* Icono ojo (solo aparece en el segundo .password-container) */
+.eye-button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 18px;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+.eye-button:hover {
+  color: white;
+}
+
+/* … resto de tu CSS abajo … */
+
 body, html {
   margin: 0;
   padding: 0;
@@ -14,6 +67,17 @@ body, html {
   align-items: center;
 }
 
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .login-box {
   background-color: #0e1b2c;
   padding: 40px 30px;
@@ -21,6 +85,18 @@ body, html {
   box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
   width: 360px;
   text-align: center;
+  animation: dropIn 0.6s ease-out both;
+}
+
+.login-logo {
+  display: block;
+  margin: 0 auto 20px;
+  height: 40px;
+  filter: drop-shadow(0 0 2px #000);
+  transition: transform 0.3s ease;
+}
+.login-logo:hover {
+  transform: scale(1.1);
 }
 
 .login-box h2 {
@@ -34,6 +110,7 @@ body, html {
   margin-bottom: 30px;
 }
 
+/* === Campo de email === */
 .input {
   width: 100%;
   padding: 12px;
@@ -43,16 +120,42 @@ body, html {
   background-color: #1f2a3c;
   color: white;
   font-size: 14px;
+  transition: background-color 0.2s ease;
 }
-
 .input::placeholder {
   color: #94a3b8;
 }
-
-.password-container {
-  position: relative;
+.input:focus {
+  outline: none;
+  background-color: #233047;
 }
 
+/* === Campo de contraseña (caja + input + icono) === */
+.password-container {
+  position: relative;
+  background-color: #1f2a3c;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.password-input {
+  width: 100%;
+  padding: 12px 44px 12px 12px; /* top | right (espacio ojo) | bottom | left */
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.password-input::placeholder {
+  color: #94a3b8;
+}
+.password-input:focus {
+  outline: none;
+}
+
+/* icono ojo */
 .eye-button {
   position: absolute;
   top: 50%;
@@ -63,19 +166,18 @@ body, html {
   cursor: pointer;
   color: #cbd5e1;
   font-size: 18px;
-  padding: 0;
-  margin: 0;
   height: 24px;
   width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.2s ease;
 }
-
 .eye-button:hover {
   color: white;
 }
 
+/* === Botón Iniciar Sesión === */
 .login-button {
   width: 100%;
   padding: 12px;
@@ -85,28 +187,28 @@ body, html {
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 10px;
-  margin-bottom: 20px;
+  margin: 10px 0 20px;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
-
 .login-button:hover {
   background-color: #6fe3ab;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.login-button:active {
+  transform: translateY(0);
 }
 
+/* === Links debajo del formulario === */
 .links a {
   display: block;
   color: #72fcd4;
   font-size: 14px;
   margin-bottom: 8px;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
-
 .links a:hover {
+  color: #98fcd2;
   text-decoration: underline;
-}
-
-.logo {
-  margin-top: 20px;
-  height: 40px;
-  filter: drop-shadow(0 0 2px #000);
 }

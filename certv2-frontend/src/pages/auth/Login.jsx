@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../services/authService";
 import "../../styles/login.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import logo from "../../assets/capa8-logo.png";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,22 +16,15 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const { token, rol } = await loginUser(email, password);
-
+      const { token, rol, nombre } = await loginUser(email, password);
       if (!token || !["admin", "analista"].includes(rol?.toLowerCase())) {
         alert("Rol no permitido");
         return;
       }
-
       localStorage.setItem("token", token);
       localStorage.setItem("rol", rol.toLowerCase());
-
-      // Redirección específica por rol
-      if (rol.toLowerCase() === "admin") {
-        navigate("/admin/inicio", { replace: true });
-      } else if (rol.toLowerCase() === "analista") {
-        navigate("/analista/inicio", { replace: true });
-      }
+      localStorage.setItem("nombre", nombre);
+      navigate(`/${rol.toLowerCase()}/inicio`, { replace: true });
     } catch (error) {
       console.error("Axios error ›", error);
       alert(
@@ -41,25 +35,32 @@ const Login = () => {
     }
   };
 
+  // …resto del código…
+
   return (
     <div className="login-container">
       <div className="login-box">
+        <img src={logo} alt="Capa8 Logo" className="login-logo" />
         <h2>CertWatcher</h2>
         <p>Inteligencia en tiempo real</p>
 
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          className="input"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {/* Contenedor para el email, idéntico al de contraseña */}
+        <div className="password-container">
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            className="password-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
 
+        {/* Contenedor para la contraseña */}
         <div className="password-container">
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Contraseña"
-            className="input"
+            className="password-input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -67,6 +68,7 @@ const Login = () => {
             type="button"
             className="eye-button"
             onClick={togglePasswordVisibility}
+            aria-label="Mostrar u ocultar contraseña"
           >
             {showPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
@@ -80,11 +82,10 @@ const Login = () => {
           <a href="#">¿Olvidaste tu contraseña?</a>
           <a href="/register">Crear cuenta</a>
         </div>
-
-        <img src="/logo-capa8.png" alt="capa8" className="logo" />
       </div>
     </div>
   );
+
 };
 
 export default Login;

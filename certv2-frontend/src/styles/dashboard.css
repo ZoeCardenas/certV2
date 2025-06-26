@@ -273,3 +273,23 @@ body {
   color: white;
   font-size: 0.85rem;
 }
+.btn-nuevo {
+  background: #16a34a;
+  color: #fff;
+  font-weight: 500;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 0 1px #0f4729;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-nuevo:hover {
+  background: #198754;
+  transform: scale(1.02);
+}

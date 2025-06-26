@@ -10,8 +10,8 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState(null);        // ← mensaje de feedback
-  const [messageType, setMessageType] = useState('');  // 'error' o 'success'
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState('');
   const navigate = useNavigate();
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
@@ -20,25 +20,20 @@ const Register = () => {
     setMessage(null);
     try {
       const { token, rol } = await registerUser({ nombre, email, password });
-      if (!token) throw new Error('No se recibió token de autenticación.');
-
+      if (!token) throw new Error('No token recibido');
       localStorage.setItem('token', token);
       localStorage.setItem('rol', rol.toLowerCase());
-
       setMessageType('success');
       setMessage('¡Registro exitoso! Redirigiendo...');
-      
-      // Tras breve espera, redirigimos
       setTimeout(() => {
         navigate(`/${rol.toLowerCase()}/dashboard`, { replace: true });
       }, 1500);
-
     } catch (err) {
-      console.error('Error al registrar:', err);
+      console.error(err);
       setMessageType('error');
       setMessage(
         err.response?.data?.error ||
-        'Ocurrió un problema al registrarte. Por favor intenta de nuevo.'
+        'Ocurrió un problema al registrarte. Intenta de nuevo.'
       );
     }
   };
@@ -54,27 +49,31 @@ const Register = () => {
           </div>
         )}
 
-        <input
-          type="text"
-          placeholder="Nombre completo"
-          className="input"
-          value={nombre}
-          onChange={e => setNombre(e.target.value)}
-        />
+        <div className="input-container">
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            className="text-input"
+            value={nombre}
+            onChange={e => setNombre(e.target.value)}
+          />
+        </div>
 
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          className="input"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        />
+        <div className="input-container">
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            className="text-input"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+          />
+        </div>
 
         <div className="password-container">
           <input
             type={showPassword ? 'text' : 'password'}
             placeholder="Contraseña"
-            className="input"
+            className="password-input"
             value={password}
             onChange={e => setPassword(e.target.value)}
           />
@@ -82,6 +81,7 @@ const Register = () => {
             type="button"
             className="eye-button"
             onClick={togglePasswordVisibility}
+            aria-label="Mostrar u ocultar contraseña"
           >
             {showPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
@@ -96,7 +96,8 @@ const Register = () => {
         </div>
       </div>
     </div>
-  );
+);
+
 };
 
 export default Register;

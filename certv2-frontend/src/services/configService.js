@@ -1,7 +1,7 @@
 // src/services/configService.js
 import api from "./api";
 
-// Obtener configuración de usuario
+// Obtener configuración
 export const getConfig = () =>
   api
     .get("/configuracion", {
@@ -9,10 +9,12 @@ export const getConfig = () =>
     })
     .then(r => r.data);
 
-// Actualizar configuración de usuario
+// Actualizar configuración (sin ID en la ruta)
 export const updateConfig = payload =>
   api
-    .put("/configuracion", payload, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
+    .put(
+      "/configuracion",
+      payload,
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    )
     .then(r => r.data);

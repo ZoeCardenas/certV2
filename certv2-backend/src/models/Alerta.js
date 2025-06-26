@@ -18,8 +18,9 @@ const Alerta = sequelize.define('Alerta', {
     allowNull: false
   },
   enviado_por: {
-    type: DataTypes.ENUM('correo', 'telegram'),
-    allowNull: false
+    type: DataTypes.ARRAY(DataTypes.STRING), // Soporta múltiples medios
+    allowNull: false,
+    defaultValue: ['correo']
   },
   created_at: {
     type: DataTypes.DATE,

@@ -2,9 +2,11 @@
 const WebSocket = require('ws');
 const fs = require('fs');
 const { sendTelegramAlert } = require('./telegramService');
+
 const Monitoreo = require('../models/Monitoreo');
 const MonitoreoDetalle = require('../models/MonitoreoDetalle');
 const Usuario = require('../models/Usuario');
+const Alerta = require('../models/Alerta'); // ✅ nuevo
 
 const CERTSTREAM_URL = 'wss://certstream.calidog.io/';
 const LOG_FILE = 'alerts.log';
@@ -20,32 +22,33 @@ async function cargarMonitoreos() {
     where: { activo: true },
     include: [
       { model: MonitoreoDetalle },
-      { model: Usuario, attributes: ['telegram_token', 'telegram_chat_id'] }
+      { model: Usuario, attributes: ['id', 'telegram_token', 'telegram_chat_id'] }
     ]
   });
 
   monitoreosActivos = [];
 
   datos.forEach(m => {
-    // Si el monitoreo no tiene usuario o no tiene tokens, lo reportamos y saltamos
     if (!m.Usuario) {
       console.warn(`⚠️ Monitoreo ${m.id} sin Usuario asociado, se omite.`);
       return;
     }
-    const { telegram_token: token, telegram_chat_id: chatId } = m.Usuario;
+
+    const { telegram_token: token, telegram_chat_id: chatId, id: usuario_id } = m.Usuario;
     if (!token || !chatId) {
       console.warn(`⚠️ Usuario ${m.usuario_id} sin telegram_token/chatId, se omite.`);
       return;
     }
 
-    // Por cada detalle válido, añadimos la configuración
     m.MonitoreoDetalles.forEach(d => {
       monitoreosActivos.push({
         detalleId: d.id,
         dominio: d.dominio.toLowerCase(),
         palabra_clave: d.palabra_clave.toLowerCase(),
         organizacion: m.organizacion,
-        telegram: { token, chatId }
+        telegram: { token, chatId },
+        usuario_id,
+        monitoreo_id: m.id
       });
     });
   });
@@ -63,7 +66,7 @@ function logAlert(domain, organization) {
 }
 
 /**
- * Inicia la escucha en CertStream y dispara alertas por Telegram.
+ * Inicia la escucha en CertStream y dispara alertas por Telegram + base de datos.
  */
 function startCertStreamWatcher() {
   const ws = new WebSocket(CERTSTREAM_URL);
@@ -71,7 +74,6 @@ function startCertStreamWatcher() {
   ws.on('open', async () => {
     console.log("🔌 Conectado a CertStream.");
     await cargarMonitoreos();
-    // Refresca cada 5 minutos
     setInterval(cargarMonitoreos, 5 * 60 * 1000);
   });
 
@@ -82,9 +84,11 @@ function startCertStreamWatcher() {
     } catch {
       return;
     }
+
     if (message.message_type !== 'certificate_update') return;
 
     const allDomains = message.data.leaf_cert.all_domains || [];
+
     allDomains.forEach(domain => {
       const domLower = domain.toLowerCase();
 
@@ -99,14 +103,29 @@ function startCertStreamWatcher() {
             `🌐 *Dominio detectado:* ${domain}\n` +
             `🔑 *Palabra clave:* ${cfg.palabra_clave}`;
 
-          // Envía por Telegram
+          // Enviar por Telegram
           sendTelegramAlert(cfg.telegram.token, cfg.telegram.chatId, text)
-            .then(() => console.log(`✅ Enviado alerta para detalle ${cfg.detalleId}`))
-            .catch(err =>
-              console.error(`❌ Error enviando a ${cfg.telegram.chatId}:`, err.message)
-            );
+            .then(() => {
+              console.log(`✅ Enviado alerta para detalle ${cfg.detalleId}`);
 
-          // Lo logueamos localmente
+              // Guardar en base de datos
+              Alerta.create({
+                dominio_detectado: domain,
+                palabra_clave_detectada: cfg.palabra_clave,
+                enviado_por: 'telegram',
+                usuario_id: cfg.usuario_id,
+                monitoreo_id: cfg.monitoreo_id
+              }).then(() => {
+                console.log(`📦 Alerta guardada en BD`);
+              }).catch(err => {
+                console.error(`❌ Error guardando alerta en BD:`, err.message);
+              });
+            })
+            .catch(err => {
+              console.error(`❌ Error enviando a ${cfg.telegram.chatId}:`, err.message);
+            });
+
+          // Log local
           logAlert(domain, cfg.organizacion);
         }
       });

@@ -96,4 +96,5 @@ router.get(
   ctrl.getDominiosByMonitoreo
 );
 
+
 module.exports = router;

@@ -2,7 +2,7 @@ const app = require('./src/app');
 const { connectDB } = require('./src/db/PostgreSQL');
 const { startCertStreamWatcher } = require('./src/services/certstreamService');
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4000;
 
 async function init() {
   await connectDB();

@@ -9,7 +9,8 @@ const {
 
 // Aplica middleware de autenticación y rol
 router.use(auth);
-router.use(checkRol(['admin'])); // Solo admin puede acceder
+// Ahora: admin y analista pueden actualizar su propia configuración
+router.use(checkRol(['admin', 'analista']));
 
 router.get('/', obtenerConfiguracion);
 router.put('/', actualizarConfiguracion);

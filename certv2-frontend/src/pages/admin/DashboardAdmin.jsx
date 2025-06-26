@@ -4,7 +4,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import {
   listDominios,
   createMonitoreo,
-  toggleMonitoreo,
+  toggleMonitoreoAdmin,
   updateDetalle,
   deleteMonitoreo,
 } from "../../services/monitoreoService";
@@ -18,38 +18,38 @@ const DashboardAdmin = () => {
   const [dominios, setDominios] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Control para modal inline de creación
+  // Crear modal
   const [showCreate, setShowCreate] = useState(false);
   const [org, setOrg] = useState("");
   const [rows, setRows] = useState([{ dominio: "", palabra_clave: "" }]);
 
-  // Edit inline
+  // Modal Editar inline
   const [edit, setEdit] = useState(null);
   const [editDom, setEditDom] = useState("");
   const [editKey, setEditKey] = useState("");
 
-  // Carga inicial de datos
+  // 1) Carga inicial
   const fetchDominios = async () => {
     setLoading(true);
     try {
       const data = await listDominios();
       setDominios(
         data.map((d) => ({
-          id: d.id,
-          organizacion: d.Monitoreo?.organizacion ?? "—",
+          id: d.id,                    // detalle ID
+          monitoreoId: d.monitoreoId,   // Asegúrate de que esta propiedad esté bien definida
+          organizacion: d.organizacion,
           dominio: d.dominio,
+          coincidencia: d.coincidencia,
           hora: new Date(d.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: "2-digit", minute: "2-digit",
           }),
-          coincidencia: d.palabra_clave ?? "—",
-          country: "MX",
-          location: "México",
-          activo: d.Monitoreo?.activo ?? true,
+          country: d.country ?? "MX",
+          location: d.location ?? "México",
+          activo: d.activo,
         }))
       );
     } catch (e) {
-      console.error(e);
+      console.error("fetchDominios:", e);
       showError("Error", "No pude cargar los dominios.");
     } finally {
       setLoading(false);
@@ -60,12 +60,14 @@ const DashboardAdmin = () => {
     fetchDominios();
   }, []);
 
-  // Añadir fila en modal create
-  const addRow = () => setRows([...rows, { dominio: "", palabra_clave: "" }]);
-  const changeRow = (i, f, v) =>
-    setRows(rows.map((r, idx) => (idx === i ? { ...r, [f]: v } : r)));
+  // 2) Crear Monitoreo
+  const addRow = () =>
+    setRows((prev) => [...prev, { dominio: "", palabra_clave: "" }]);
+  const changeRow = (i, field, v) =>
+    setRows((prev) =>
+      prev.map((r, idx) => (idx === i ? { ...r, [field]: v } : r))
+    );
 
-  // Crear monitoreo
   const handleCreate = async () => {
     const detalles = rows
       .filter((r) => r.dominio.trim() && r.palabra_clave.trim())
@@ -74,25 +76,26 @@ const DashboardAdmin = () => {
         palabra_clave: r.palabra_clave.trim(),
       }));
 
-    if (!org.trim() || !detalles.length) {
-      showError("Faltan datos", "Completa la organización y al menos un dominio/palabra.");
-      return;
+    if (!org.trim() || detalles.length === 0) {
+      return showError(
+        "Faltan datos",
+        "Completa la organización y al menos un dominio/palabra."
+      );
     }
-
     try {
       await createMonitoreo({ organizacion: org.trim(), detalles });
       showSuccess("Creado", "Monitoreo creado correctamente.");
       setShowCreate(false);
       setOrg("");
       setRows([{ dominio: "", palabra_clave: "" }]);
-      fetchDominios();
+      await fetchDominios();
     } catch (e) {
-      console.error(e);
+      console.error("handleCreate:", e);
       showError("Error", e.response?.data?.error ?? "Error al crear monitoreo");
     }
   };
 
-  // Toggle activo/inactivo
+  // 3) Toggle Activo/Inactivo (Admin)
   const handleToggle = async (row) => {
     const ok = await showConfirm(
       row.activo ? "Desactivar monitoreo" : "Activar monitoreo",
@@ -102,24 +105,31 @@ const DashboardAdmin = () => {
     );
     if (!ok) return;
 
+    // Verifica que el monitoreoId esté definido
+    if (!row.monitoreoId) {
+      return showError("Error", "El ID del monitoreo es inválido.");
+    }
+
     try {
-      await toggleMonitoreo(row.id);
-      showSuccess("Hecho", `Monitoreo ${row.activo ? "desactivado" : "activado"}.`);
-      setDominios((prev) =>
-        prev.map((d) => (d.id === row.id ? { ...d, activo: !d.activo } : d))
+      // Aquí pasas el ID correctamente (row.monitoreoId debe ser un valor válido)
+      await toggleMonitoreoAdmin(row.monitoreoId);
+      showSuccess(
+        "Hecho",
+        `Monitoreo ${row.activo ? "desactivado" : "activado"}.`
       );
+      await fetchDominios();
     } catch (e) {
-      console.error(e);
+      console.error("handleToggle:", e);
       showError("Error", "No pude cambiar el estado.");
     }
   };
 
-  // Mostrar detalle con SweetAlert2
+  // 4) Ver Detalle
   const handleDetail = (row) => {
     Swal.fire({
       title: "Detalle de dominio",
       html: `
-        <p><b>ID:</b> ${row.id}</p>
+        <p><b>ID detalle:</b> ${row.id}</p>
         <p><b>Organización:</b> ${row.organizacion}</p>
         <p><b>Dominio:</b> ${row.dominio}</p>
         <p><b>Palabra clave:</b> ${row.coincidencia}</p>
@@ -132,18 +142,15 @@ const DashboardAdmin = () => {
     });
   };
 
-  // Abrir modal inline de edición
+  // 5) Editar inline
   const openEdit = (row) => {
     setEdit(row);
     setEditDom(row.dominio);
     setEditKey(row.coincidencia);
   };
-
-  // Guardar edición
   const saveEdit = async () => {
     if (!editDom.trim() || !editKey.trim()) {
-      showError("Faltan datos", "Completa dominio y palabra clave.");
-      return;
+      return showError("Faltan datos", "Completa dominio y palabra clave.");
     }
     try {
       await updateDetalle(edit.id, {
@@ -152,24 +159,27 @@ const DashboardAdmin = () => {
       });
       showSuccess("Actualizado", "Detalle modificado correctamente.");
       setEdit(null);
-      fetchDominios();
+      await fetchDominios();
     } catch (e) {
-      console.error(e);
+      console.error("saveEdit:", e);
       showError("Error", "No pude actualizar el detalle.");
     }
   };
 
-  // Eliminar un detalle
+  // 6) Eliminar Monitoreo completo
   const handleDelete = async (row) => {
-    const ok = await showConfirm("Eliminar detalle", "¿Eliminar este detalle?");
+    const ok = await showConfirm(
+      "Eliminar monitoreo",
+      "¿Eliminar este monitoreo y sus detalles?"
+    );
     if (!ok) return;
     try {
-      await deleteMonitoreo(row.id);
-      showSuccess("Eliminado", "Detalle eliminado correctamente.");
-      setDominios((prev) => prev.filter((d) => d.id !== row.id));
+      await deleteMonitoreo(row.monitoreoId);
+      showSuccess("Eliminado", "Monitoreo eliminado correctamente.");
+      await fetchDominios();
     } catch (e) {
-      console.error(e);
-      showError("Error", "No pude eliminar el detalle.");
+      console.error("handleDelete:", e);
+      showError("Error", "No pude eliminar el monitoreo.");
     }
   };
 
@@ -183,8 +193,7 @@ const DashboardAdmin = () => {
           style={{ marginBottom: "1.5rem", background: "#198754" }}
           onClick={() => setShowCreate(true)}
         >
-          <FaPlus style={{ marginRight: 6 }} />
-          Nuevo monitoreo
+          <FaPlus style={{ marginRight: 6 }} /> Nuevo monitoreo
         </button>
 
         <MonitorTable
@@ -226,9 +235,7 @@ const DashboardAdmin = () => {
                   className="input"
                   placeholder="palabra clave"
                   value={r.palabra_clave}
-                  onChange={(e) =>
-                    changeRow(i, "palabra_clave", e.target.value)
-                  }
+                  onChange={(e) => changeRow(i, "palabra_clave", e.target.value)}
                 />
               </div>
             ))}
@@ -257,7 +264,7 @@ const DashboardAdmin = () => {
       {edit && (
         <div className="modal-backdrop" onClick={() => setEdit(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3>Editar dominio</h3>
+            <h3>Editar detalle</h3>
 
             <label>Dominio</label>
             <input

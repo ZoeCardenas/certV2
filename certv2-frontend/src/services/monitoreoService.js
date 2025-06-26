@@ -1,159 +1,140 @@
-// src/services/monitoreoService.js
 import api from "./api";
 
-// ╔══════════════════════════════╗
-// ║ MONITOREOS (cabeceras / organizaciones)
-// ╚══════════════════════════════╝
+const getTokenHeader = () => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Token is missing");
+  return { Authorization: `Bearer ${token}` };
+};
+
+/* ════════════════════════════════
+   MONITOREOS (Admin & Analista)
+═════════════════════════════════*/
+
+// Listar todos (admin → /monitoreos/todos, analista → /monitoreos)
 export const listMonitoreos = async () => {
   const rol = localStorage.getItem("rol");
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = getTokenHeader();
   if (rol === "admin") {
-    const res = await api.get("/monitoreos/todos", { headers });
-    return res.data;
+    const { data } = await api.get("/monitoreos/todos", { headers });
+    return data;
   }
-  const res = await api.get("/monitoreos", { headers });
-  return res.data;
+  const { data } = await api.get("/monitoreos", { headers });
+  return data;
 };
 
-export const createMonitoreo = (payload) =>
-  api
-    .post("/monitoreos", payload, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    .then((r) => r.data);
-
-export const updateMonitoreo = (id, payload) =>
-  api
-    .put(`/monitoreos/${id}`, payload, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    .then((r) => r.data);
-
-export const deleteMonitoreo = (id) =>
-  api
-    .delete(`/monitoreos/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    .then((r) => r.data);
-
-export const toggleMonitoreo = (id) => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .patch(
-      `/monitoreos/${id}/toggle`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    .then((r) => r.data);
-};
-
+// Obtener uno (admin & analista)
 export const getMonitoreo = (id) =>
-  api
-    .get(`/monitoreos/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    .then((r) => r.data);
+  api.get(`/monitoreos/${id}`, { headers: getTokenHeader() }).then(r => r.data);
 
-// ╔══════════════════════════════╗
-// ║ DETALLES (dominio + palabra_clave)
-// ╚══════════════════════════════╝
+// Crear (admin & analista)
+export const createMonitoreo = (payload) =>
+  api.post("/monitoreos", payload, { headers: getTokenHeader() }).then(r => r.data);
+
+// Actualizar (admin & analista)
+export const updateMonitoreo = (id, payload) =>
+  api.put(`/monitoreos/${id}`, payload, { headers: getTokenHeader() }).then(r => r.data);
+
+// Eliminar (admin & analista)
+export const deleteMonitoreo = (id) =>
+  api.delete(`/monitoreos/${id}`, { headers: getTokenHeader() }).then(r => r.data);
+
+// Toggle activo (analista y admin propio)
+export const toggleMonitoreo = (id) =>
+  api.patch(`/monitoreos/${id}/toggle`, {}, { headers: getTokenHeader() }).then(r => r.data);
+
+// Toggle activo (solo admin sobre cualquier monitoreo)
+export const toggleMonitoreoAdmin = (id) =>
+  api.patch(`/admin/monitoreos/${id}/toggle`, {}, { headers: getTokenHeader() }).then(r => r.data);
+
+/* ════════════════════════════════
+   DETALLES (Analista only)
+═════════════════════════════════*/
+
+// Listar detalles de un monitoreo concreto
+export const listDetalles = (monitoreoId) =>
+  api.get(`/monitoreos/${monitoreoId}/detalles`, { headers: getTokenHeader() }).then(r => r.data);
+
+// Crear detalle
 export const createDetalle = (payload) =>
-  api
-    .post("/detalles", payload, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    .then((r) => r.data);
+  api.post("/detalles", payload, { headers: getTokenHeader() }).then(r => r.data);
 
+// Actualizar detalle
 export const updateDetalle = (id, payload) =>
-  api
-    .put(`/detalles/${id}`, payload, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    .then((r) => r.data);
+  api.put(`/detalles/${id}`, payload, { headers: getTokenHeader() }).then(r => r.data);
 
-// ╔══════════════════════════════╗
-// ║ VISTA TABLA DOMINIOS
-// ╚══════════════════════════════╝
+// Eliminar detalle
+export const deleteDetalle = (id) =>
+  api.delete(`/detalles/${id}`, { headers: getTokenHeader() }).then(r => r.data);
+
+/* ════════════════════════════════
+   VISTA UNIFICADA DE DOMINIOS
+═════════════════════════════════*/
+
 export const listDominios = async () => {
   const rol = localStorage.getItem("rol");
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = getTokenHeader();
 
   if (rol === "admin") {
     const { data } = await api.get("/monitoreos/dominios/todos", { headers });
-    return data;
+    return data.map(d => ({
+      id: d.id,
+      monitoreoId: d.Monitoreo.id,
+      organizacion: d.Monitoreo.organizacion,
+      dominio: d.dominio,
+      coincidencia: d.palabra_clave,
+      createdAt: d.createdAt,
+      activo: d.Monitoreo.activo,
+      country: d.country ?? "MX",
+      location: d.location ?? "México"
+    }));
   }
-  const mis = await listMonitoreos();
-  const lists = await Promise.all(
-    mis.map((m) =>
-      api.get(`/monitoreos/${m.id}/detalles`, { headers }).then((r) => r.data)
+
+  const monitoreos = await listMonitoreos();
+  const detallesPorMonitoreo = await Promise.all(
+    monitoreos.map(m =>
+      listDetalles(m.id).then(detalles =>
+        detalles.map(d => ({
+          id: d.id,
+          monitoreoId: m.id,
+          organizacion: m.organizacion,
+          dominio: d.dominio,
+          coincidencia: d.palabra_clave,
+          createdAt: d.createdAt,
+          activo: m.activo,
+          country: d.country ?? "MX",
+          location: d.location ?? "México"
+        }))
+      )
     )
   );
-  return lists.flat();
+  return detallesPorMonitoreo.flat();
 };
 
-// ╔══════════════════════════════╗
-// ║ ALERTAS
-// ╚══════════════════════════════╝
-export const listAlertas = () => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .get("/alertas", { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data);
-};
+/* ════════════════════════════════
+   ALERTAS (Analista only)
+═════════════════════════════════*/
 
-export const countAlertas = () => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .get("/alertas/count", { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data.count);
-};
+export const listAlertas = () =>
+  api.get("/alertas", { headers: getTokenHeader() }).then(r => r.data);
 
-export const getAlertaById = (id) => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .get(`/alertas/${id}`, { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data);
-};
+export const countAlertas = () =>
+  api.get("/alertas/count", { headers: getTokenHeader() }).then(r => r.data.count);
 
-// ╔══════════════════════════════╗
-// ║ USUARIOS
-// ╚══════════════════════════════╝
-export const countUsuarios = () => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .get("/usuarios/count", { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data.count);
-};
+export const getAlertaById = id =>
+  api.get(`/alertas/${id}`, { headers: getTokenHeader() }).then(r => r.data);
 
-export const getAllUsers = () => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .get("/usuarios", { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data);
-};
+/* ════════════════════════════════
+   USUARIOS (Admin only)
+═════════════════════════════════*/
 
-export const updateUser = (id, payload) => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .put(`/usuarios/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data);
-};
+export const countUsuarios = () =>
+  api.get("/usuarios/count", { headers: getTokenHeader() }).then(r => r.data.count);
 
-export const deleteUser = (id) => {
-  const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token is missing");
-  return api
-    .delete(`/usuarios/${id}`, { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.data);
-};
+export const getAllUsers = () =>
+  api.get("/usuarios", { headers: getTokenHeader() }).then(r => r.data);
+
+export const updateUser = (id, payload) =>
+  api.put(`/usuarios/${id}`, payload, { headers: getTokenHeader() }).then(r => r.data);
+
+export const deleteUser = (id) =>
+  api.delete(`/usuarios/${id}`, { headers: getTokenHeader() }).then(r => r.data);

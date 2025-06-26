@@ -11,18 +11,8 @@ const DashboardLayout = ({ children }) => {
       {rol === "analista" ? <SidebarAnalista /> : <SidebarAdmin />}
 
       <div className="content-area">
-        {/* TOPBAR opcional */}
         <header className="topbar">
-          <span className="greeting">👋 Hola, {rol}</span>
-          <button
-            className="logout-btn"
-            onClick={() => {
-              localStorage.clear();
-              window.location.href = "/login";
-            }}
-          >
-            Cerrar sesión
-          </button>
+          {/* Aquí ya no hay botón de logout */}
         </header>
 
         <main className="page-content">{children}</main>

@@ -6,46 +6,29 @@ import {
   createMonitoreo,
   toggleMonitoreo,
   updateDetalle,
-  deleteMonitoreo,
+  deleteDetalle,
 } from "../../services/monitoreoService";
 import MonitorTable from "../../components/MonitorTable";
 import Swal from "sweetalert2";
 import { showConfirm, showSuccess, showError } from "../../utils/swal";
-import { FaUsers, FaFileAlt, FaBell, FaServer, FaPlus } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import "../../styles/dashboard.css";
 
-// ───────── Tarjeta métrica ─────────
-const StatCard = ({ icon: Icon, label, value }) => (
-  <div className="stat-card">
-    <div className="icon-wrapper">
-      <Icon size={28} />
-    </div>
-    <div className="text-wrapper">
-      <span className="value">{value}</span>
-      <span className="label">{label}</span>
-    </div>
-  </div>
-);
-
 const DashboardAnalista = () => {
-  const [stats, setStats] = useState({
-    certificados: 0,
-    alertas: 0,
-    usuarios: 0,
-    dominios: 0,
-  });
-
   const [dominios, setDominios] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Estados para creación
   const [showCreate, setShowCreate] = useState(false);
   const [org, setOrg] = useState("");
   const [rows, setRows] = useState([{ dominio: "", palabra_clave: "" }]);
 
+  // Estados para edición
   const [edit, setEdit] = useState(null);
   const [editDom, setEditDom] = useState("");
   const [editKey, setEditKey] = useState("");
 
+  // Carga inicial y mapeo de datos
   const fetchDominios = async () => {
     setLoading(true);
     try {
@@ -53,6 +36,7 @@ const DashboardAnalista = () => {
       setDominios(
         data.map((d) => ({
           id: d.id,
+          monitoreoId: d.monitoreoId,
           organizacion: d.organizacion ?? "—",
           dominio: d.dominio ?? "—",
           coincidencia: d.palabra_clave ?? "—",
@@ -62,10 +46,9 @@ const DashboardAnalista = () => {
           }),
           country: "MX",
           location: "México",
-          activo: d.activo ?? true,
+          activo: d.activo,
         }))
       );
-      setStats((s) => ({ ...s, dominios: data.length }));
     } catch (e) {
       console.error(e);
       showError("Error", "No se pudieron cargar los dominios.");
@@ -78,10 +61,12 @@ const DashboardAnalista = () => {
     fetchDominios();
   }, []);
 
+  // Helpers para crear
   const addRow = () => setRows([...rows, { dominio: "", palabra_clave: "" }]);
-  const changeRow = (i, f, v) =>
-    setRows(rows.map((r, idx) => (idx === i ? { ...r, [f]: v } : r)));
+  const changeRow = (idx, field, value) =>
+    setRows(rows.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
 
+  // Crear nuevo monitoreo
   const handleCreate = async () => {
     const detalles = rows
       .filter((r) => r.dominio.trim() && r.palabra_clave.trim())
@@ -89,25 +74,24 @@ const DashboardAnalista = () => {
         dominio: r.dominio.trim(),
         palabra_clave: r.palabra_clave.trim(),
       }));
-
-    if (!org.trim() || !detalles.length) {
+    if (!org.trim() || detalles.length === 0) {
       showError("Faltan datos", "Completa la organización y al menos un dominio/palabra.");
       return;
     }
-
     try {
       await createMonitoreo({ organizacion: org.trim(), detalles });
       showSuccess("Creado", "Monitoreo creado correctamente.");
       setShowCreate(false);
       setOrg("");
       setRows([{ dominio: "", palabra_clave: "" }]);
-      fetchDominios();
+      await fetchDominios();
     } catch (e) {
       console.error(e);
       showError("Error", e.response?.data?.error ?? "Error al crear monitoreo");
     }
   };
 
+  // Activar/Desactivar monitoreo
   const handleToggle = async (row) => {
     const ok = await showConfirm(
       row.activo ? "Desactivar monitoreo" : "Activar monitoreo",
@@ -118,22 +102,21 @@ const DashboardAnalista = () => {
     if (!ok) return;
 
     try {
-      await toggleMonitoreo(row.id);
+      await toggleMonitoreo(row.monitoreoId);
       showSuccess("Hecho", `Monitoreo ${row.activo ? "desactivado" : "activado"}.`);
-      setDominios((prev) =>
-        prev.map((d) => (d.id === row.id ? { ...d, activo: !d.activo } : d))
-      );
+      await fetchDominios(); // recarga todo para reflejar cambio
     } catch (e) {
       console.error(e);
       showError("Error", "No se pudo cambiar el estado.");
     }
   };
 
+  // Ver detalles en modal
   const handleDetail = (row) => {
     Swal.fire({
       title: "Detalle de dominio",
       html: `
-        <p><b>ID:</b> ${row.id}</p>
+        <p><b>ID detalle:</b> ${row.id}</p>
         <p><b>Organización:</b> ${row.organizacion}</p>
         <p><b>Dominio:</b> ${row.dominio}</p>
         <p><b>Palabra clave:</b> ${row.coincidencia}</p>
@@ -146,12 +129,14 @@ const DashboardAnalista = () => {
     });
   };
 
+  // Abrir modal de edición
   const openEdit = (row) => {
     setEdit(row);
     setEditDom(row.dominio);
     setEditKey(row.coincidencia);
   };
 
+  // Guardar cambios de edición
   const saveEdit = async () => {
     if (!editDom.trim() || !editKey.trim()) {
       showError("Faltan datos", "Completa dominio y palabra clave.");
@@ -164,20 +149,21 @@ const DashboardAnalista = () => {
       });
       showSuccess("Actualizado", "Detalle modificado correctamente.");
       setEdit(null);
-      fetchDominios();
+      await fetchDominios();
     } catch (e) {
       console.error(e);
       showError("Error", "No se pudo actualizar el detalle.");
     }
   };
 
+  // Eliminar detalle
   const handleDelete = async (row) => {
     const ok = await showConfirm("Eliminar detalle", "¿Eliminar este detalle?");
     if (!ok) return;
     try {
-      await deleteMonitoreo(row.id);
+      await deleteDetalle(row.id);
       showSuccess("Eliminado", "Detalle eliminado correctamente.");
-      setDominios((prev) => prev.filter((d) => d.id !== row.id));
+      await fetchDominios();
     } catch (e) {
       console.error(e);
       showError("Error", "No se pudo eliminar el detalle.");
@@ -198,13 +184,6 @@ const DashboardAnalista = () => {
           Nuevo monitoreo
         </button>
 
-        <section className="stats-grid">
-          <StatCard icon={FaFileAlt} label="Certificados" value={stats.certificados} />
-          <StatCard icon={FaBell} label="Alertas" value={stats.alertas} />
-          <StatCard icon={FaUsers} label="Usuarios" value={stats.usuarios} />
-          <StatCard icon={FaServer} label="Dominios" value={stats.dominios} />
-        </section>
-
         <MonitorTable
           data={dominios}
           onDetail={handleDetail}
@@ -214,7 +193,7 @@ const DashboardAnalista = () => {
         />
       </div>
 
-      {/* Modal crear */}
+      {/* Modal Crear */}
       {showCreate && (
         <div className="modal-backdrop">
           <div className="modal-box">
@@ -248,7 +227,11 @@ const DashboardAnalista = () => {
             ))}
             <button
               className="small-btn"
-              style={{ backgroundColor: "#38bdf8", color: "#000", marginBottom: 16 }}
+              style={{
+                backgroundColor: "#38bdf8",
+                color: "#000",
+                marginBottom: 16,
+              }}
               onClick={addRow}
             >
               + fila
@@ -265,7 +248,7 @@ const DashboardAnalista = () => {
         </div>
       )}
 
-      {/* Modal editar */}
+      {/* Modal Editar */}
       {edit && (
         <div className="modal-backdrop" onClick={() => setEdit(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
