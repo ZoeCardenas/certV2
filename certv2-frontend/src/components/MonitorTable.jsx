@@ -1,4 +1,3 @@
-// src/components/MonitorTable.jsx
 import React from "react";
 import {
   FaInfoCircle,
@@ -9,13 +8,14 @@ import {
 } from "react-icons/fa";
 import CountryFlag from "react-country-flag";
 
-// Badge component for status display
+/* ---------- Badge ---------- */
 const Badge = ({ text, color = "#4de0ff" }) => (
   <span className="badge" style={{ background: "#013f4a", color }}>
     {text}
   </span>
 );
 
+/* ---------- Tabla ---------- */
 const MonitorTable = ({
   data = [],
   onDetail,
@@ -23,11 +23,15 @@ const MonitorTable = ({
   onEdit,
   onDelete,
 }) => {
-  const rol = localStorage.getItem("rol"); // "admin" or "analista"
+  const rol = localStorage.getItem("rol"); // "admin" | "analista"
+
+  /* true si queremos mostrar acciones completas (admin o analista) */
+  const canManage = rol === "admin" || rol === "analista";
 
   return (
     <div className="monitor-table-wrapper">
       <h2>Monitoreo en Tiempo Real</h2>
+
       <table className="monitor-table">
         <thead>
           <tr>
@@ -40,37 +44,46 @@ const MonitorTable = ({
             <th>Acciones</th>
           </tr>
         </thead>
+
         <tbody>
           {data.map((row) => (
-            <tr key={row.id}> {/* Asegúrate de que el key sea único y no hay ningún espacio antes o después */}
+            <tr key={row.id}>
               <td>{row.organizacion}</td>
               <td>{row.dominio}</td>
               <td>{row.hora}</td>
-              <td><Badge text={row.coincidencia} /></td>
+
+              <td>
+                <Badge text={row.coincidencia} />
+              </td>
+
               <td className="flag">
                 <CountryFlag svg countryCode={row.country} />
                 <span>{row.location}</span>
               </td>
+
               <td>
                 <Badge
                   text={row.activo ? "Activo" : "Inactivo"}
                   color={row.activo ? "#28d17a" : "#d9534f"}
                 />
               </td>
+
               <td className="actions">
+                {/* Toggle */}
                 {row.activo ? (
                   <FaToggleOn
-                    title={rol === "admin" ? "Desactivar (admin)" : "Desactivar"}
+                    title="Desactivar"
                     onClick={() => onToggle?.(row)}
                   />
                 ) : (
                   <FaToggleOff
-                    title={rol === "admin" ? "Activar (admin)" : "Activar"}
+                    title="Activar"
                     onClick={() => onToggle?.(row)}
                   />
                 )}
 
-                {rol === "admin" && (
+                {/* Editar / Eliminar para admin y analista */}
+                {canManage && (
                   <>
                     <FaEdit
                       title="Editar"
@@ -85,6 +98,7 @@ const MonitorTable = ({
                   </>
                 )}
 
+                {/* Detalle (visible a todos) */}
                 <FaInfoCircle
                   title="Detalles"
                   style={{ marginLeft: 6 }}
@@ -94,7 +108,6 @@ const MonitorTable = ({
             </tr>
           ))}
         </tbody>
-
       </table>
     </div>
   );

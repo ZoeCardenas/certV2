@@ -198,19 +198,37 @@ exports.eliminarMonitoreo = async (req, res) => {
 /* ══════════════════════════════════════════════
    TOGGLE activo (solo si NO está eliminado)
    ══════════════════════════════════════════════ */
+// src/controllers/monitoreoController.js
 exports.toggleMonitoreo = async (req, res) => {
   try {
-    const m = await Monitoreo.findOne({
-      where: { id: req.params.id, ...filtByUser(req), ...notDeleted },
+    const { id } = req.params;
+    
+    // Si es admin, busca cualquier monitoreo, si es analista, busca solo su propio monitoreo
+    const filter = req.user.rol === "admin" ? { id } : { id, usuario_id: req.user.id };
+    
+    const monitoreo = await Monitoreo.findOne({
+      where: { ...filter, ...notDeleted }
     });
-    if (!m) return res.status(404).json({ error: "Monitoreo no encontrado" });
+    
+    if (!monitoreo) {
+      return res.status(404).json({ error: "Monitoreo no encontrado" });
+    }
 
-    m.activo = !m.activo;
-    await m.save();
-    await cargarMonitoreos(); // Verifica que esta función recargue los monitoreos de forma correcta
-    res.json({ mensaje: `Monitoreo ${m.activo ? "activado" : "desactivado"}` });
-  } catch (e) {
-    console.error('Error al cambiar estado de monitoreo:', e);
+    // Cambiar estado del monitoreo (activo)
+    monitoreo.activo = !monitoreo.activo;
+    await monitoreo.save();
+
+    return res.json({
+      success: true,
+      monitoreo: {
+        id: monitoreo.id,
+        organizacion: monitoreo.organizacion,
+        activo: monitoreo.activo,
+      },
+    });
+  } catch (error) {
+    console.error("Error en toggleMonitoreo:", error);
     res.status(500).json({ error: "Error al cambiar estado del monitoreo" });
   }
 };
+

@@ -4,7 +4,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import {
   listDominios,
   createMonitoreo,
-  toggleMonitoreoAdmin,
+  toggleMonitoreo,
   updateDetalle,
   deleteMonitoreo,
 } from "../../services/monitoreoService";
@@ -15,37 +15,32 @@ import { FaPlus } from "react-icons/fa";
 import "../../styles/dashboard.css";
 
 const DashboardAdmin = () => {
+  /* ──────────── state ──────────── */
   const [dominios, setDominios] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Crear modal
+  // modal “Crear”
   const [showCreate, setShowCreate] = useState(false);
   const [org, setOrg] = useState("");
   const [rows, setRows] = useState([{ dominio: "", palabra_clave: "" }]);
 
-  // Modal Editar inline
+  // modal “Editar”
   const [edit, setEdit] = useState(null);
   const [editDom, setEditDom] = useState("");
   const [editKey, setEditKey] = useState("");
 
-  // 1) Carga inicial
+  /* ───────── 1) Carga inicial ───────── */
   const fetchDominios = async () => {
     setLoading(true);
     try {
-      const data = await listDominios();
+      const data = await listDominios();         // ya viene con monitoreoId correcto
       setDominios(
         data.map((d) => ({
-          id: d.id,                    // detalle ID
-          monitoreoId: d.monitoreoId,   // Asegúrate de que esta propiedad esté bien definida
-          organizacion: d.organizacion,
-          dominio: d.dominio,
-          coincidencia: d.coincidencia,
+          ...d,                                   // conserva TODO, incl. monitoreoId
           hora: new Date(d.createdAt).toLocaleTimeString([], {
-            hour: "2-digit", minute: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
           }),
-          country: d.country ?? "MX",
-          location: d.location ?? "México",
-          activo: d.activo,
         }))
       );
     } catch (e) {
@@ -60,13 +55,10 @@ const DashboardAdmin = () => {
     fetchDominios();
   }, []);
 
-  // 2) Crear Monitoreo
-  const addRow = () =>
-    setRows((prev) => [...prev, { dominio: "", palabra_clave: "" }]);
+  /* ───────── 2) Crear monitoreo ───────── */
+  const addRow = () => setRows((p) => [...p, { dominio: "", palabra_clave: "" }]);
   const changeRow = (i, field, v) =>
-    setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, [field]: v } : r))
-    );
+    setRows((p) => p.map((r, idx) => (idx === i ? { ...r, [field]: v } : r)));
 
   const handleCreate = async () => {
     const detalles = rows
@@ -95,8 +87,12 @@ const DashboardAdmin = () => {
     }
   };
 
-  // 3) Toggle Activo/Inactivo (Admin)
+  /* ───────── 3) Activar / desactivar ───────── */
   const handleToggle = async (row) => {
+    if (!row.monitoreoId) {
+      return showError("Sin ID válido", "Este registro no trae monitoreo_id.");
+    }
+
     const ok = await showConfirm(
       row.activo ? "Desactivar monitoreo" : "Activar monitoreo",
       row.activo
@@ -105,14 +101,8 @@ const DashboardAdmin = () => {
     );
     if (!ok) return;
 
-    // Verifica que el monitoreoId esté definido
-    if (!row.monitoreoId) {
-      return showError("Error", "El ID del monitoreo es inválido.");
-    }
-
     try {
-      // Aquí pasas el ID correctamente (row.monitoreoId debe ser un valor válido)
-      await toggleMonitoreoAdmin(row.monitoreoId);
+      await toggleMonitoreo(row.monitoreoId);
       showSuccess(
         "Hecho",
         `Monitoreo ${row.activo ? "desactivado" : "activado"}.`
@@ -124,7 +114,7 @@ const DashboardAdmin = () => {
     }
   };
 
-  // 4) Ver Detalle
+  /* ───────── 4) Detalle ───────── */
   const handleDetail = (row) => {
     Swal.fire({
       title: "Detalle de dominio",
@@ -142,12 +132,13 @@ const DashboardAdmin = () => {
     });
   };
 
-  // 5) Editar inline
+  /* ───────── 5) Editar detalle ───────── */
   const openEdit = (row) => {
     setEdit(row);
     setEditDom(row.dominio);
     setEditKey(row.coincidencia);
   };
+
   const saveEdit = async () => {
     if (!editDom.trim() || !editKey.trim()) {
       return showError("Faltan datos", "Completa dominio y palabra clave.");
@@ -166,7 +157,7 @@ const DashboardAdmin = () => {
     }
   };
 
-  // 6) Eliminar Monitoreo completo
+  /* ───────── 6) Eliminar monitoreo ───────── */
   const handleDelete = async (row) => {
     const ok = await showConfirm(
       "Eliminar monitoreo",
@@ -183,6 +174,7 @@ const DashboardAdmin = () => {
     }
   };
 
+  /* ───────── Render ───────── */
   if (loading) return <div className="dashboard-loading">Cargando…</div>;
 
   return (
@@ -193,7 +185,8 @@ const DashboardAdmin = () => {
           style={{ marginBottom: "1.5rem", background: "#198754" }}
           onClick={() => setShowCreate(true)}
         >
-          <FaPlus style={{ marginRight: 6 }} /> Nuevo monitoreo
+          <FaPlus style={{ marginRight: 6 }} />
+          Nuevo monitoreo
         </button>
 
         <MonitorTable
@@ -205,7 +198,7 @@ const DashboardAdmin = () => {
         />
       </div>
 
-      {/* Modal Inline: Crear */}
+      {/* ───────── Modal: Crear ───────── */}
       {showCreate && (
         <div className="modal-backdrop">
           <div className="modal-box">
@@ -260,7 +253,7 @@ const DashboardAdmin = () => {
         </div>
       )}
 
-      {/* Modal Inline: Editar */}
+      {/* ───────── Modal: Editar ───────── */}
       {edit && (
         <div className="modal-backdrop" onClick={() => setEdit(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>

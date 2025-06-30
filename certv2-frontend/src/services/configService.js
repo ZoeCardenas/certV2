@@ -1,20 +1,17 @@
-// src/services/configService.js
 import api from "./api";
 
 // Obtener configuración
 export const getConfig = () =>
   api
-    .get("/configuracion", {
+    .get("/config", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
-    .then(r => r.data);
+    .then((r) => r.data);
 
-// Actualizar configuración (sin ID en la ruta)
-export const updateConfig = payload =>
+// Actualizar configuración
+export const updateConfig = (payload) =>
   api
-    .put(
-      "/configuracion",
-      payload,
-      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-    )
-    .then(r => r.data);
+    .put("/config", payload, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    })
+    .then((r) => r.data);
